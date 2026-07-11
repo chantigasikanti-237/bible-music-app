@@ -9,6 +9,7 @@ const {
   getLocalizedBookTitle,
 } = require("../utils/bookMetadata");
 const { buildPassageId, requirePassageId } = require("../utils/passage");
+const { transliterateTitle } = require("../utils/transliterate");
 
 const mapChapterResponse = (chapter) => ({
   versionId: chapter.versionId,
@@ -102,9 +103,19 @@ const createBibleContentService = ({
 
     return getBookMetadataList().map((book) => {
       const stored = storedById.get(book.id);
+      const title = getLocalizedBookTitle(book.id, languageCode);
       return {
         id: book.id,
-        title: getLocalizedBookTitle(book.id, languageCode),
+        title,
+        // Lets a search typed in English letters (e.g. "Genesis") match a
+        // book whose displayed title is in native script — same fix as
+        // Hymns search, see src/utils/transliterate.js.
+        titleRomanized: transliterateTitle(title, languageCode),
+        // The book's standard English name is always the same regardless of
+        // display language — someone typing "Ephesians" almost certainly
+        // means the English name, not a phonetic guess at its Telugu
+        // translation (a different word, not a transliteration of it).
+        englishTitle: book.englishTitle,
         canon: book.canon,
         chapterCount: book.chapterCount,
         availableChapterCount: stored?.maxChapterNumber || 0,

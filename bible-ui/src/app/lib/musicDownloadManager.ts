@@ -34,6 +34,11 @@ const IDLE_STATE: SongDownloadState = {
 const MAX_CONCURRENT_DOWNLOADS = 3;
 
 const stateByVideoId = new Map<string, SongDownloadState>();
+// Song metadata for anything currently downloading/queued, so the Assets ▸
+// Downloads screen can show a card for it (title/artist/image) before it's
+// actually saved to IndexedDB — otherwise an in-progress download is
+// invisible there until it finishes.
+const songByVideoId = new Map<string, DownloadSong>();
 const cancelFlags = new Map<string, boolean>();
 const listeners = new Set<() => void>();
 
@@ -45,7 +50,15 @@ let activeCount = 0;
 // server message (which names the actual limit) instead of a generic one.
 let lastLimitMessage = 'Download limit reached.';
 
+// getActiveDownloads() is read via useSyncExternalStore, which requires a
+// stable reference when nothing changed — rebuilding the array on every call
+// would look "changed" every render and defeat that. Cache it, and only
+// rebuild when notify() actually fires.
+let activeDownloadsSnapshot: Array<{ song: DownloadSong; state: SongDownloadState }> = [];
+let activeDownloadsDirty = true;
+
 function notify(): void {
+  activeDownloadsDirty = true;
   for (const listener of listeners) listener();
 }
 
@@ -56,6 +69,19 @@ export function subscribe(listener: () => void): () => void {
 
 export function getSnapshot(videoId: string): SongDownloadState {
   return stateByVideoId.get(videoId) ?? IDLE_STATE;
+}
+
+export function getActiveDownloads(): Array<{ song: DownloadSong; state: SongDownloadState }> {
+  if (activeDownloadsDirty) {
+    const result: Array<{ song: DownloadSong; state: SongDownloadState }> = [];
+    for (const [videoId, state] of stateByVideoId) {
+      const song = songByVideoId.get(videoId);
+      if (song) result.push({ song, state });
+    }
+    activeDownloadsSnapshot = result;
+    activeDownloadsDirty = false;
+  }
+  return activeDownloadsSnapshot;
 }
 
 export function isDownloading(videoId: string): boolean {
@@ -83,6 +109,7 @@ function startNextInQueue(): void {
 function runDownload(song: DownloadSong): void {
   activeCount++;
   cancelFlags.set(song.videoId, false);
+  songByVideoId.set(song.videoId, song);
   stateByVideoId.set(song.videoId, { status: 'downloading', progress: { loaded: 0, total: 0 } });
   notify();
 
@@ -99,6 +126,7 @@ function runDownload(song: DownloadSong): void {
     })
     .finally(() => {
       stateByVideoId.delete(song.videoId);
+      songByVideoId.delete(song.videoId);
       cancelFlags.delete(song.videoId);
       activeCount--;
       notify();
@@ -135,6 +163,7 @@ export async function startSongDownload(song: DownloadSong): Promise<StartDownlo
   }
 
   pendingQueue.push(song);
+  songByVideoId.set(song.videoId, song);
   stateByVideoId.set(song.videoId, { status: 'queued', progress: { loaded: 0, total: 0 } });
   notify();
   return 'queued';
@@ -147,6 +176,7 @@ export function cancelSongDownload(videoId: string): void {
     const idx = pendingQueue.findIndex(s => s.videoId === videoId);
     if (idx !== -1) pendingQueue.splice(idx, 1);
     stateByVideoId.delete(videoId);
+    songByVideoId.delete(videoId);
     releaseQuota(videoId);
     notify();
     return;

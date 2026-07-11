@@ -1,15 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, ChevronRight, Star, Search, X } from 'lucide-react';
+import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, ChevronRight, Star, Search, X, Music2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getBibleVersionId } from '../lib/api';
+import { getBibleVersionId, getToken, apiFetch } from '../lib/api';
 import { BIBLE_VERSIONS } from './BibleLibrary';
+import { parseReference } from '../lib/bibleReference';
+import { listDownloadedSongs } from '../lib/offlineMusicStore';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
 const LAST_PLAYED_KEY = 'music_last_played_v1';
 const RECENT_CHAPTERS_KEY = 'recent_chapters_v1';
+const MUSIC_FAVS_KEY = 'music_favorites_v2';
 const STREAK = 7; // milestone: 7, 30, 100 days trigger confetti
+const GLOBAL_SEARCH_DEBOUNCE_MS = 350;
+const MAX_RESULTS_PER_GROUP = 4;
 
 const QUOTES = [
   { text: 'I can do all things through Christ who strengthens me.', author: 'Philippians 4:13' },
@@ -146,7 +151,16 @@ const SoundwaveMini = ({ playing }: { playing: boolean }) => {
 /* ── Main component ───────────────────────────────────────────── */
 
 interface RecentChapter { book: string; chapter: number; label: string; }
-interface SearchBook { id: string; title: string; canon: string; }
+interface SearchBook { id: string; title: string; titleRomanized?: string; englishTitle?: string; canon: string; }
+
+// Global search result shapes — one per source the search box covers.
+interface HymnResult { songId: string; title: string; languageCode: string; titleRomanized?: string; }
+interface MusicSong { videoId: string; title: string; artist: string; image: string; language: string; isLongMix: boolean; }
+interface HymnFavorite { _id: string; songId: string; title: string; languageCode: string; }
+interface VerseBookmark {
+  _id: string; bookId: string; bookName: string; chapterNumber: number; verseNumber: number;
+  versionId: number; text: string; note: string | null;
+}
 
 export function Home() {
   const navigate = useNavigate();
@@ -186,8 +200,130 @@ export function Home() {
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
-    return searchBooks.filter(b => b.title.toLowerCase().includes(q)).slice(0, 8);
+    return searchBooks.filter(b =>
+      b.title.toLowerCase().includes(q) ||
+      b.titleRomanized?.toLowerCase().includes(q) ||
+      b.englishTitle?.toLowerCase().includes(q)
+    ).slice(0, 8);
   }, [searchQuery, searchBooks]);
+
+  /* ── Global search: Hymns / downloaded songs / favorites / bookmarks ── */
+  const [downloadedSongs, setDownloadedSongs] = useState<MusicSong[]>([]);
+  const [musicFavorites, setMusicFavorites] = useState<MusicSong[]>([]);
+  const [hymnFavorites, setHymnFavorites] = useState<HymnFavorite[]>([]);
+  const [verseBookmarks, setVerseBookmarks] = useState<VerseBookmark[]>([]);
+  const [hymnResults, setHymnResults] = useState<HymnResult[]>([]);
+  const hymnSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Local/account sources — loaded once when search opens (not per
+  // keystroke), then filtered client-side as the user types, same pattern
+  // as the Bible book list above.
+  useEffect(() => {
+    if (!showSearch) return;
+    listDownloadedSongs().then(songs => setDownloadedSongs(songs));
+    try {
+      setMusicFavorites(JSON.parse(localStorage.getItem(MUSIC_FAVS_KEY) || '[]'));
+    } catch { setMusicFavorites([]); }
+
+    if (!getToken()) return;
+    apiFetch<{ success: boolean; data: any[] }>('/api/v1/users/me/bookmarks?targetType=song')
+      .then(res => {
+        if (!res.success || !Array.isArray(res.data)) return;
+        setHymnFavorites(res.data.map((b: any) => ({
+          _id: b._id,
+          songId: b.songRef?.songId || '',
+          title: b.songRef?.title || '',
+          languageCode: b.songRef?.languageCode || 'en',
+        })));
+      })
+      .catch(() => {});
+    apiFetch<{ success: boolean; data: any[] }>('/api/v1/users/me/bookmarks?targetType=verse')
+      .then(res => {
+        if (!res.success || !Array.isArray(res.data)) return;
+        setVerseBookmarks(
+          res.data
+            .filter((b: any) => b.verseRef)
+            .map((b: any) => ({
+              _id: b._id,
+              bookId: b.verseRef.bookId,
+              bookName: b.verseRef.bookName || b.verseRef.bookId,
+              chapterNumber: b.verseRef.chapterNumber,
+              verseNumber: b.verseRef.verseNumber,
+              versionId: b.verseRef.versionId,
+              text: b.verseRef.text || '',
+              note: b.note || null,
+            }))
+        );
+      })
+      .catch(() => {});
+  }, [showSearch]);
+
+  // The hymn catalog is too large (6,000+ entries) to fetch upfront like the
+  // book list — debounced live backend search instead, same 350ms pattern
+  // the Hymns tab's own search uses.
+  useEffect(() => {
+    if (hymnSearchTimer.current) clearTimeout(hymnSearchTimer.current);
+    const q = searchQuery.trim();
+    // A parsed Bible reference (e.g. "genesis 7") takes over the box —
+    // don't also fire an unrelated hymn search for it.
+    if (!q || parseReference(q, searchBooks)) {
+      setHymnResults([]);
+      return;
+    }
+    hymnSearchTimer.current = setTimeout(() => {
+      fetch(`/api/v1/songs?search=${encodeURIComponent(q)}&limit=${MAX_RESULTS_PER_GROUP}`)
+        .then(r => r.json())
+        .then((data: { success: boolean; data: any[] }) => {
+          if (data.success && Array.isArray(data.data)) {
+            setHymnResults(data.data.map((s: any) => ({
+              songId: s.songId, title: s.title, languageCode: s.languageCode, titleRomanized: s.titleRomanized,
+            })));
+          }
+        })
+        .catch(() => {});
+    }, GLOBAL_SEARCH_DEBOUNCE_MS);
+    return () => { if (hymnSearchTimer.current) clearTimeout(hymnSearchTimer.current); };
+  }, [searchQuery, searchBooks]);
+
+  const searchQ = searchQuery.trim().toLowerCase();
+
+  const downloadedSongResults = useMemo(() => {
+    if (!searchQ) return [];
+    return downloadedSongs
+      .filter(s => s.title.toLowerCase().includes(searchQ) || s.artist.toLowerCase().includes(searchQ))
+      .slice(0, MAX_RESULTS_PER_GROUP);
+  }, [searchQ, downloadedSongs]);
+
+  const musicFavoriteResults = useMemo(() => {
+    if (!searchQ) return [];
+    return musicFavorites
+      .filter(s => s.title.toLowerCase().includes(searchQ) || s.artist.toLowerCase().includes(searchQ))
+      .slice(0, MAX_RESULTS_PER_GROUP);
+  }, [searchQ, musicFavorites]);
+
+  const hymnFavoriteResults = useMemo(() => {
+    if (!searchQ) return [];
+    return hymnFavorites.filter(f => f.title.toLowerCase().includes(searchQ)).slice(0, MAX_RESULTS_PER_GROUP);
+  }, [searchQ, hymnFavorites]);
+
+  const bookmarkResults = useMemo(() => {
+    if (!searchQ) return [];
+    return verseBookmarks
+      .filter(b => b.text.toLowerCase().includes(searchQ) || (b.note ? b.note.toLowerCase().includes(searchQ) : false))
+      .slice(0, MAX_RESULTS_PER_GROUP);
+  }, [searchQ, verseBookmarks]);
+
+  // "genesis 7:16" / "ephesians 22" — jump straight to that chapter (and
+  // verse, if given) instead of just filtering the book list by name.
+  const parsedReference = useMemo(
+    () => parseReference(searchQuery, searchBooks),
+    [searchQuery, searchBooks]
+  );
+
+  const hasAnySearchResults = Boolean(
+    parsedReference || searchResults.length || hymnResults.length || downloadedSongResults.length ||
+    musicFavoriteResults.length || hymnFavoriteResults.length || bookmarkResults.length
+  );
 
   const lastSong = useMemo(() => {
     try { return JSON.parse(localStorage.getItem(LAST_PLAYED_KEY) || 'null'); } catch { return null; }
@@ -268,20 +404,126 @@ export function Home() {
               </button>
 
               {searchQuery.trim() && (
-                <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-[#163A2D]/10 shadow-lg overflow-hidden z-20">
-                  {searchResults.length === 0 ? (
-                    <p className={`px-4 py-3 text-sm ${textMuted}`}>No books match "{searchQuery}"</p>
-                  ) : (
-                    searchResults.map((book) => (
-                      <button
-                        key={book.id}
-                        onClick={() => { closeSearch(); navigate(`/bible/${book.id}`); }}
-                        className={`w-full text-left px-4 py-3 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
-                      >
-                        {book.title}
-                        <span className={`ml-2 text-xs ${textMuted}`}>{book.canon === 'OT' ? 'Old Testament' : 'New Testament'}</span>
-                      </button>
-                    ))
+                <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-[#163A2D]/10 shadow-lg overflow-hidden z-20 max-h-[65vh] overflow-y-auto scrollbar-hide">
+                  {!hasAnySearchResults && (
+                    <p className={`px-4 py-3 text-sm ${textMuted}`}>No results for "{searchQuery}"</p>
+                  )}
+
+                  {parsedReference && (
+                    <button
+                      onClick={() => {
+                        closeSearch();
+                        navigate(`/bible/${parsedReference.book.id}/${parsedReference.chapter}`, {
+                          state: parsedReference.verse ? { verseNumber: parsedReference.verse } : undefined,
+                        });
+                      }}
+                      className="w-full text-left px-4 py-3 font-sans text-sm hover:bg-[#163A2D]/8 transition-colors bg-[#163A2D]/5 border-b border-[#163A2D]/10"
+                    >
+                      <span className={`font-semibold ${textPrimary}`}>
+                        {parsedReference.book.title} {parsedReference.chapter}
+                        {parsedReference.verse ? `:${parsedReference.verse}` : ''}
+                      </span>
+                      <span className={`ml-2 text-xs ${textMuted}`}>Go to chapter</span>
+                    </button>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div className="border-b border-[#163A2D]/8">
+                      <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Bible</p>
+                      {searchResults.map((book) => (
+                        <button
+                          key={book.id}
+                          onClick={() => { closeSearch(); navigate(`/bible/${book.id}`); }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                        >
+                          {book.title}
+                          <span className={`ml-2 text-xs ${textMuted}`}>{book.canon === 'OT' ? 'Old Testament' : 'New Testament'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {hymnResults.length > 0 && (
+                    <div className="border-b border-[#163A2D]/8">
+                      <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Hymns</p>
+                      {hymnResults.map((hymn) => (
+                        <button
+                          key={hymn.songId}
+                          onClick={() => {
+                            closeSearch();
+                            navigate('/hymns', { state: { openHymn: { songId: hymn.songId, title: hymn.title, languageCode: hymn.languageCode } } });
+                          }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors truncate ${textPrimary}`}
+                        >
+                          {hymn.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {downloadedSongResults.length > 0 && (
+                    <div className="border-b border-[#163A2D]/8">
+                      <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Downloaded Songs</p>
+                      {downloadedSongResults.map((song) => (
+                        <button
+                          key={song.videoId}
+                          onClick={() => { closeSearch(); navigate('/songs', { state: { openSong: song } }); }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                        >
+                          <span className="truncate">{song.title}</span>
+                          <span className={`ml-2 text-xs ${textMuted}`}>{song.artist}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {(musicFavoriteResults.length > 0 || hymnFavoriteResults.length > 0) && (
+                    <div className="border-b border-[#163A2D]/8">
+                      <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Favorites</p>
+                      {musicFavoriteResults.map((song) => (
+                        <button
+                          key={song.videoId}
+                          onClick={() => { closeSearch(); navigate('/songs', { state: { openSong: song } }); }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                        >
+                          <span className="truncate">{song.title}</span>
+                          <span className={`ml-2 text-xs ${textMuted}`}>{song.artist}</span>
+                        </button>
+                      ))}
+                      {hymnFavoriteResults.map((fav) => (
+                        <button
+                          key={fav._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate('/hymns', { state: { openHymn: { songId: fav.songId, title: fav.title, languageCode: fav.languageCode } } });
+                          }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors truncate ${textPrimary}`}
+                        >
+                          {fav.title}
+                          <span className={`ml-2 text-xs ${textMuted}`}>Hymn</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {bookmarkResults.length > 0 && (
+                    <div>
+                      <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Bookmarks &amp; Notes</p>
+                      {bookmarkResults.map((bm) => (
+                        <button
+                          key={bm._id}
+                          onClick={() => {
+                            closeSearch();
+                            navigate(`/bible/${bm.bookId}/${bm.chapterNumber}`, { state: { verseNumber: bm.verseNumber } });
+                          }}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                        >
+                          <span className="font-semibold">{bm.bookName} {bm.chapterNumber}:{bm.verseNumber}</span>
+                          <span className={`ml-2 text-xs ${textMuted}`}>{bm.note ? 'Note' : 'Bookmark'}</span>
+                          <p className={`text-xs truncate ${textMuted}`}>{bm.note || bm.text}</p>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -309,11 +551,7 @@ export function Home() {
                 onClick={() => navigate('/hymns')}
                 className="md:hidden flex-shrink-0 w-11 h-11 rounded-full bg-white border border-[#163A2D]/10 shadow-sm flex items-center justify-center"
               >
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#163A2D" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 18V5l12-2v13" />
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="16" r="3" />
-                </svg>
+                <Music2 size={19} className="text-[#163A2D]" strokeWidth={1.7} />
               </motion.button>
             </div>
           )}

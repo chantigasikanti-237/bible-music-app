@@ -8,6 +8,7 @@ require("dotenv").config({
 
 const Song = require("../src/models/Song");
 const slugify = require("../src/utils/slugify");
+const { transliterateTitle } = require("../src/utils/transliterate");
 
 const SOURCE_DB_NAME = "songs_db";
 const SOURCE_COLLECTION_NAME = "songs";
@@ -169,6 +170,7 @@ const transformSong = (sourceSong) => {
     songId,
     languageCode,
     title,
+    titleRomanized: transliterateTitle(title, languageCode),
     slug,
     artist: normalizeText(sourceSong.artist) || null,
     lyricsSections: normalizeLyricsSections(sourceSong),

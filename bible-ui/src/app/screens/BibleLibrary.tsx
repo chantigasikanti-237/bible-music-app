@@ -7,10 +7,13 @@ import { getBibleVersionId, setBibleVersionId } from '../lib/api';
 import { getVersionCompletionInfo } from '../lib/offlineStore';
 import { subscribe, getSnapshot, startVersionDownload, cancelVersionDownload } from '../lib/downloadManager';
 import { isUniversalLanguageEnabled, applyUniversalLanguage, type LanguageCode } from '../lib/languagePreference';
+import { parseReference } from '../lib/bibleReference';
 
 interface BibleBook {
   id: string;
   title: string;
+  titleRomanized?: string;
+  englishTitle?: string;
   canon: string;
   chapterCount: number;
   availableChapterCount: number;
@@ -102,10 +105,18 @@ export function BibleLibrary() {
 
   const filteredBooks = books.filter(book => {
     const testament = canonLabel(book.canon);
-    const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      book.title.toLowerCase().includes(q) ||
+      book.titleRomanized?.toLowerCase().includes(q) ||
+      book.englishTitle?.toLowerCase().includes(q);
     const matchesTestament = selectedTestament === 'All' || testament === selectedTestament;
     return matchesSearch && matchesTestament;
   });
+
+  // "genesis 7:16" / "ephesians 22" — jump straight to that chapter (and
+  // verse, if given) instead of just filtering the book list by name.
+  const parsedReference = parseReference(searchQuery, books);
 
   return (
     <div className="min-h-full bg-background pb-24">
@@ -190,6 +201,26 @@ export function BibleLibrary() {
       {/* Books List */}
       {!loading && (
         <div className="px-4 space-y-3">
+          {parsedReference && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(`/bible/${parsedReference.book.id}/${parsedReference.chapter}`, {
+                state: parsedReference.verse ? { verseNumber: parsedReference.verse } : undefined,
+              })}
+              className="w-full bg-primary/8 rounded-2xl p-4 flex items-center justify-between border border-primary/20 hover:bg-primary/12 transition-all"
+            >
+              <div className="text-left">
+                <h3 className="text-primary font-bold mb-0.5 font-sans text-base">
+                  {parsedReference.book.title} {parsedReference.chapter}
+                  {parsedReference.verse ? `:${parsedReference.verse}` : ''}
+                </h3>
+                <p className="text-muted-foreground font-sans text-sm">Go to chapter</p>
+              </div>
+              <ChevronRight size={20} className="text-primary" />
+            </motion.button>
+          )}
           {filteredBooks.map((book, index) => (
             <motion.button
               key={book.id}

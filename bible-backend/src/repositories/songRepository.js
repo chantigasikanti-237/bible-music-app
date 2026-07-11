@@ -39,10 +39,14 @@ const createSongRepository = ({ model = Song } = {}) => ({
       filter.languageCode = languageCode;
     }
     if (search) {
-      filter.title = {
-        $regex: escapeRegex(search),
-        $options: "i",
-      };
+      const pattern = escapeRegex(search);
+      // Matches either the native-script title or its romanized form, so a
+      // query typed in English letters can find a hymn stored in Telugu,
+      // Devanagari, etc. — see src/utils/transliterate.js.
+      filter.$or = [
+        { title: { $regex: pattern, $options: "i" } },
+        { titleRomanized: { $regex: pattern, $options: "i" } },
+      ];
     }
 
     if (cursor) {

@@ -13,6 +13,7 @@ const { songRepository } = require("../repositories/songRepository");
 const { findBookMetadataByTitle } = require("../utils/bookMetadata");
 const { buildPassageId } = require("../utils/passage");
 const slugify = require("../utils/slugify");
+const { transliterateTitle } = require("../utils/transliterate");
 
 const LOCAL_DATA_FILES = [
   {
@@ -141,6 +142,7 @@ const importSongs = async () => {
       songId,
       languageCode,
       title,
+      titleRomanized: transliterateTitle(title, languageCode),
       slug,
       artist: String(song.artist || "").trim() || null,
       lyricsSections: [],

@@ -70,6 +70,14 @@ const songSchema = new Schema(
       required: true,
       trim: true,
     },
+    // Lowercase, Latin-script version of `title` — lets a search typed in
+    // English letters (e.g. "Akasham") match a title stored in native
+    // script (e.g. "ఆకాశం"). See src/utils/transliterate.js.
+    titleRomanized: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     slug: {
       type: String,
       required: true,
@@ -107,5 +115,6 @@ songSchema.index({ languageCode: 1, slug: 1 }, { unique: true });
 songSchema.index({ languageCode: 1, createdAt: -1, _id: -1 });
 songSchema.index({ title: 1, _id: 1 });
 songSchema.index({ languageCode: 1, title: 1, _id: 1 });
+songSchema.index({ titleRomanized: 1 });
 
 module.exports = mongoose.model("Song", songSchema);

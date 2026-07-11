@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { Volume2, VolumeX, SlidersHorizontal, Minus, Plus, ChevronLeft, ChevronRight, Copy, Share2, Bookmark, BookmarkCheck, NotebookPen, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageContainer, AppBar } from '../components/BibleSystem';
@@ -41,6 +41,7 @@ const VERSION_LABELS: Record<number, { label: string; lang: string }> = {
 export function ReadingScreen() {
   const { book, chapter } = useParams<{ book: string; chapter: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [verses, setVerses] = useState<Verse[]>([]);
   const [bookName, setBookName] = useState(book || '');
   const [chapterCount, setChapterCount] = useState(0);
@@ -119,6 +120,24 @@ export function ReadingScreen() {
       })
       .catch(() => {});
   }, [book, chapterNum, versionId]);
+
+  // Jumping here from a parsed reference like "genesis 7:16" passes the
+  // target verse via nav state — scroll to it and highlight it once the
+  // chapter has actually loaded. Guarded so it only fires once per landing,
+  // not on every unrelated re-render while this chapter stays open.
+  const jumpedToVerseRef = useRef<number | null>(null);
+  useEffect(() => {
+    const targetVerse = (location.state as { verseNumber?: number } | null)?.verseNumber;
+    if (!targetVerse || loading || verses.length === 0) return;
+    if (jumpedToVerseRef.current === targetVerse) return;
+    jumpedToVerseRef.current = targetVerse;
+
+    const timer = setTimeout(() => {
+      setHighlightedVerse(targetVerse);
+      document.getElementById(`verse-${targetVerse}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [location.state, loading, verses]);
 
   // Fetch chapter count + localized book name once per book/version
   useEffect(() => {

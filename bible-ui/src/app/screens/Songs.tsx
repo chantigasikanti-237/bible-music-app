@@ -4,7 +4,7 @@ import { Search, Play, Pause, Heart, Download, TrendingUp, X, Music, Globe, Chec
 import { motion, AnimatePresence } from 'motion/react';
 import { MiniPlayer, type PlayerSong } from '../components/MiniPlayer';
 import { getSongAudioBlobUrlOffline, isSongDownloaded, removeSongOffline, listDownloadedSongs } from '../lib/offlineMusicStore';
-import { subscribe, getSnapshot, startSongDownload, cancelSongDownload, getLastLimitMessage } from '../lib/musicDownloadManager';
+import { subscribe, getSnapshot, getActiveDownloads, startSongDownload, cancelSongDownload, getLastLimitMessage } from '../lib/musicDownloadManager';
 import { apiFetch } from '../lib/api';
 import { getMusicLanguageKey, setMusicLanguageKey, isUniversalLanguageEnabled, applyUniversalLanguage, musicKeyToCode, getMusicFollowsUniversal } from '../lib/languagePreference';
 import { BIBLE_VERSIONS } from './BibleLibrary';
@@ -61,6 +61,7 @@ const mapApi = (raw: { id: string; title: string; thumbnail: string; channelTitl
 
 export function Songs() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   /* ── Language / Tab / Search ─────────────────────────────── */
   const [lang, setLang] = useState<string>(getMusicLanguageKey);
@@ -95,6 +96,29 @@ export function Songs() {
       listDownloadedSongs().then(setDownloads);
     }
   }, [activeTab, assetsView]);
+
+  // Songs currently downloading/queued — merged into the Downloads grid below
+  // so a download shows up there the moment it starts, not just once it's
+  // finished and saved to IndexedDB.
+  const activeDownloads = useSyncExternalStore(subscribe, getActiveDownloads);
+  const activeDownloadIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const currentIds = new Set(activeDownloads.map(d => d.song.videoId));
+    const justFinished = [...activeDownloadIds.current].some(id => !currentIds.has(id));
+    activeDownloadIds.current = currentIds;
+    // A download that was active a moment ago and isn't anymore either
+    // finished or failed/was cancelled — either way, the completed list on
+    // IndexedDB may have changed, so refresh it if that's what's on screen.
+    if (justFinished && activeTab === 'assets' && assetsView === 'downloads') {
+      listDownloadedSongs().then(setDownloads);
+    }
+  }, [activeDownloads, activeTab, assetsView]);
+
+  const downloadedIds = new Set(downloads.map(s => s.videoId));
+  const mergedDownloads = [
+    ...activeDownloads.filter(d => !downloadedIds.has(d.song.videoId)).map(d => d.song),
+    ...downloads,
+  ];
 
   const refreshPlaylists = () => setPlaylists(getPlaylists());
 
@@ -353,6 +377,17 @@ export function Songs() {
 
   // Keep ref current so onended callback is never stale
   useEffect(() => { playNextRef.current = playNext; }, [playNext]);
+
+  // Jump straight into a specific song when navigated here from Home's
+  // global search (a downloaded song or a music favorite result).
+  useEffect(() => {
+    const state = location.state as { openSong?: Song } | null;
+    if (!state?.openSong?.videoId) return;
+    setPlayerSong(state.openSong);
+    setPlayerExpanded(true);
+    _loadAndPlay(state.openSong);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-play last song when navigated here from Home's mini-player
   useEffect(() => {
@@ -707,7 +742,7 @@ export function Songs() {
                     )}
 
                     {assetsView === 'downloads' && (
-                      downloads.length === 0 ? (
+                      mergedDownloads.length === 0 ? (
                         <div className="flex flex-col items-center gap-3 py-16">
                           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                             <CloudDownload size={28} className="text-muted-foreground" />
@@ -717,7 +752,7 @@ export function Songs() {
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {downloads.map((song, i) => (
+                          {mergedDownloads.map((song, i) => (
                             <motion.div key={song.videoId} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}>
                               <SongCard
                                 song={song}
@@ -725,7 +760,7 @@ export function Songs() {
                                 isLoading={isCardLoading(song.videoId)}
                                 isActive={isCardActive(song.videoId)}
                                 isFav={isFav(song.videoId)}
-                                onPlay={() => startSong(song, downloads)}
+                                onPlay={() => startSong(song, mergedDownloads)}
                                 onFav={() => toggleFav(song)}
                                 showLang
                                 showDownload
@@ -962,13 +997,21 @@ export function Songs() {
             onSeek={seekTo}
             onToggleFav={() => toggleFavById(playerSong.videoId)}
             onAddToPlaylist={() => setAddToPlaylistSong(playerSong)}
-            onDownload={() => {
-              const url = `/api/audio/stream/${playerSong.videoId}`;
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${playerSong.title}.mp3`;
-              a.target = '_blank';
-              a.click();
+            onDownload={async () => {
+              // Was firing a raw browser file download straight from the
+              // stream endpoint — bypassed auth, quota, IndexedDB storage,
+              // and the chunked-download retry logic, so it never showed up
+              // in Assets ▸ Downloads and wasn't resilient to Cloudflare's
+              // proxy timeout on a real deploy. Route through the same
+              // manager every other download button in the app uses.
+              const outcome = await startSongDownload(playerSong);
+              if (outcome === 'not_authenticated') {
+                if (window.confirm('Sign in to download songs for offline listening. Go to the sign-in screen now?')) {
+                  navigate('/login');
+                }
+              } else if (outcome === 'limit_reached') {
+                window.alert(getLastLimitMessage());
+              }
             }}
           />
         )}
