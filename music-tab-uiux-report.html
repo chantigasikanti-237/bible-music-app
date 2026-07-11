@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music Tab — UI/UX Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  img, svg { display: block; }
+  button { font: inherit; cursor: pointer; }
+
+  :root {
+    --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+    --bg: #0B1814;
+    --surface: #0F1E18;
+    --card: #13231D;
+    --card-2: #1A2D24;
+    --text: #F6F1E7;
+    --text-muted: #8FA89B;
+    --text-subtle: #5A7468;
+    --border: rgba(246,241,231,0.12);
+    --pine: #163A2D;
+    --sage: #6C8B74;
+    --gold: #B89B5E;
+    --heart: #f87171;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: #050a08;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 40px 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .canvas {
+    width: 1200px;
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  }
+
+  /* background grid texture */
+  .canvas {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(246,241,231,0.035) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  /* ===== Header band ===== */
+  .report-header {
+    padding: 56px 72px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sage);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .eyebrow::before { content: '['; color: var(--text-subtle); }
+  .eyebrow::after { content: ']'; color: var(--text-subtle); }
+  .report-header h1 {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    max-width: 18ch;
+  }
+  .report-header p {
+    margin-top: 14px;
+    font-size: 15px;
+    color: var(--text-muted);
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+  .header-meta {
+    display: flex;
+    gap: 28px;
+    margin-top: 28px;
+  }
+  .header-meta div {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-subtle);
+  }
+  .header-meta span {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  /* ===== Generic section ===== */
+  section.block {
+    padding: 48px 72px;
+    border-bottom: 1px solid var(--border);
+  }
+  .block-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .block-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .block-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    max-width: 64ch;
+    line-height: 1.6;
+  }
+
+  /* ===== Token swatches ===== */
+  .tokens-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .token {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .token-swatch {
+    height: 64px;
+  }
+  .token-meta {
+    padding: 12px 14px;
+  }
+  .token-name {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .token-hex {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-subtle);
+    margin-top: 3px;
+  }
+  .token-role {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ===== Component anatomy ===== */
+  .anatomy-row {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .anatomy-stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .callouts {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .callout {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .callout-num {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border-radius: 999px;
+    background: var(--pine);
+    border: 1px solid var(--sage);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .callout-text strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .callout-text span {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* capsule tab switcher mock */
+  .tab-switcher {
+    display: flex;
+    background: var(--card-2);
+    border-radius: 999px;
+    padding: 4px;
+    width: 100%;
+    gap: 4px;
+  }
+  .tab-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .tab-pill.active {
+    background: var(--pine);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.18);
+    padding: 1px 6px;
+    border-radius: 999px;
+  }
+
+  /* song card mock */
+  .song-card-mock {
+    width: 220px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .song-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, #1d3a2c, #0f2017);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .song-play-btn {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    width: 30px; height: 30px;
+    border-radius: 999px;
+    background: rgba(22,58,45,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .song-info {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .song-info-text { min-width: 0; }
+  .song-title-mock {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-artist-mock {
+    font-size: 10px;
+    color: var(--text-subtle);
+    margin-top: 2px;
+  }
+
+  /* ===== Phone mockups ===== */
+  .phones {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+  }
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .phone-frame {
+    width: 300px;
+    height: 632px;
+    background: #060c09;
+    border-radius: 40px;
+    border: 6px solid #1a2a22;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .phone-notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 22px;
+    background: #060c09;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    z-index: 5;
+  }
+  .phone-screen {
+    height: 100%;
+    background: var(--bg);
+    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-app-header {
+    padding: 8px 18px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .phone-app-header h2 {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .phone-app-header p {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .globe-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(108,139,116,0.16);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sage);
+  }
+  .phone-search {
+    margin: 0 18px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-subtle);
+  }
+  .phone-tabs {
+    margin: 0 18px 14px;
+  }
+  .phone-grid {
+    margin: 0 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+  }
+  .phone-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .phone-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, #234435, #0f2017);
+    position: relative;
+  }
+  .phone-thumb.alt { background: linear-gradient(135deg, #2d3a22, #14200f); }
+  .phone-thumb.alt2 { background: linear-gradient(135deg, #1f3a3a, #0f1f20); }
+  .phone-thumb.alt3 { background: linear-gradient(135deg, #3a2a1f, #1f130f); }
+  .phone-mini-play {
+    position: absolute; bottom: 6px; right: 6px;
+    width: 22px; height: 22px;
+    border-radius: 999px;
+    background: rgba(22,58,45,0.92);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .phone-card-info { padding: 7px 9px; display: flex; justify-content: space-between; gap: 4px; }
+  .pc-title { font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pc-sub { font-size: 8.5px; color: var(--text-subtle); margin-top: 2px; }
+
+  .phone-empty {
+    margin: 40px 18px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+  .phone-empty-icon {
+    width: 52px; height: 52px;
+    border-radius: 999px;
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .phone-empty p { font-size: 11px; font-weight: 600; }
+  .phone-empty span { font-size: 9.5px; color: var(--text-subtle); padding: 0 20px; line-height: 1.4; }
+  .phone-cta {
+    margin-top: 6px;
+    background: var(--pine);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+  }
+
+  .phone-mini-player {
+    margin: auto 10px 8px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .phone-mini-player .mp-art {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #234435, #0f2017);
+    flex-shrink: 0;
+  }
+  .phone-mini-player .mp-text { flex: 1; min-width: 0; }
+  .phone-mini-player .mp-title { font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phone-mini-player .mp-artist { font-size: 8.5px; color: var(--text-subtle); }
+
+  .phone-navbar {
+    margin: 8px 10px 10px;
+    background: #11201a;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 44px; }
+  .nav-item span { font-size: 7.5px; color: var(--text-subtle); }
+  .nav-item.active span { color: var(--text); font-weight: 700; }
+  .nav-dot { width: 22px; height: 22px; border-radius: 999px; display: flex; align-items: center; justify-content: center; }
+  .nav-item.active .nav-dot { background: var(--pine); }
+
+  .phone-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .phone-caption strong { color: var(--text); }
+
+  /* ===== Bottom sheet mockup ===== */
+  .sheet-demo {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .sheet-frame {
+    width: 300px;
+    height: 480px;
+    background: #060c09;
+    border-radius: 36px;
+    border: 6px solid #1a2a22;
+    position: relative;
+    overflow: hidden;
+  }
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+  }
+  .sheet-panel {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+    padding: 16px 16px 18px;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 999px;
+    margin: 0 auto 14px;
+  }
+  .sheet-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 10px;
+    border-radius: 14px;
+    margin-bottom: 6px;
+  }
+  .sheet-row.selected {
+    background: rgba(108,139,116,0.14);
+    border: 1px solid rgba(108,139,116,0.35);
+  }
+  .sheet-flag { font-size: 18px; }
+  .sheet-lang-text strong { display: block; font-size: 12px; font-weight: 700; }
+  .sheet-lang-text span { font-size: 9.5px; color: var(--text-subtle); }
+  .sheet-check { margin-left: auto; }
+
+  /* ===== Flow diagram ===== */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .flow-step {
+    position: relative;
+    padding: 0 20px 0 0;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 19px; right: -1px;
+    width: 22px; height: 1px;
+    background: var(--border);
+  }
+  .flow-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .flow-step h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .flow-step p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .flow-step code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--card);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--gold);
+  }
+
+  /* ===== Footer ===== */
+  .report-footer {
+    padding: 32px 72px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-subtle);
+  }
+  .report-footer .fmono {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<main class="canvas">
+
+  <!-- HEADER -->
+  <header class="report-header">
+    <div class="eyebrow">Bible App · Component Spec</div>
+    <h1>Music Tab — UI/UX Report</h1>
+    <p>Capsule-tab worship music browser: language-aware Trending discovery, localStorage-backed Downloads, and inline search — built on the app's dark forest-green system.</p>
+    <div class="header-meta">
+      <div>Screen<span>Music (bottom nav)</span></div>
+      <div>Source<span>Songs.tsx</span></div>
+      <div>Theme<span>Dark · Midnight Green</span></div>
+      <div>Languages<span>6 supported</span></div>
+    </div>
+  </header>
+
+  <!-- DESIGN TOKENS -->
+  <section class="block">
+    <div class="block-label">01 · Foundations</div>
+    <div class="block-title">Design tokens</div>
+    <p class="block-sub">Pulled directly from theme.css dark mode — the Music tab introduces no new colors, only new compositions of the existing system.</p>
+    <div class="tokens-grid">
+      <div class="token">
+        <div class="token-swatch" style="background:#0B1814"></div>
+        <div class="token-meta">
+          <div class="token-name">Background</div>
+          <div class="token-hex">#0B1814</div>
+          <div class="token-role">Midnight Green · screen base</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#13231D"></div>
+        <div class="token-meta">
+          <div class="token-name">Card surface</div>
+          <div class="token-hex">#13231D</div>
+          <div class="token-role">Dark Surface · song cards, sheets</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#6C8B74"></div>
+        <div class="token-meta">
+          <div class="token-name">Primary</div>
+          <div class="token-hex">#6C8B74</div>
+          <div class="token-role">Olive Sage · icons, globe chip</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#163A2D"></div>
+        <div class="token-meta">
+          <div class="token-name">Sacred Pine</div>
+          <div class="token-hex">#163A2D</div>
+          <div class="token-role">Active pill · play buttons</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#B89B5E"></div>
+        <div class="token-meta">
+          <div class="token-name">Antique Gold</div>
+          <div class="token-hex">#B89B5E</div>
+          <div class="token-role">Secondary accent</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#F6F1E7"></div>
+        <div class="token-meta">
+          <div class="token-name">Foreground</div>
+          <div class="token-hex">#F6F1E7</div>
+          <div class="token-role">Scripture Cream · text</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#f87171"></div>
+        <div class="token-meta">
+          <div class="token-name">Heart active</div>
+          <div class="token-hex">#f87171</div>
+          <div class="token-role">red-400 · favorited state</div>
+        </div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:#1e332a"></div>
+        <div class="token-meta">
+          <div class="token-name">Muted</div>
+          <div class="token-hex">rgba(246,241,231,.15)</div>
+          <div class="token-role">Borders · inactive pill track</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENT: TAB SWITCHER -->
+  <section class="block">
+    <div class="block-label">02 · Component anatomy</div>
+    <div class="block-title">Capsule tab switcher</div>
+    <p class="block-sub">Replaces the earlier side-by-side layout. A single sliding pill (Framer Motion <code style="font-family:var(--font-mono);color:var(--gold)">layoutId</code>) animates between Trending and Downloads — one screen, one focus at a time.</p>
+    <div class="anatomy-row">
+      <div class="anatomy-stage">
+        <div class="tab-switcher">
+          <div class="tab-pill active">↗ Trending</div>
+          <div class="tab-pill">⬇ Downloads <span class="badge">6</span></div>
+        </div>
+      </div>
+      <div class="callouts">
+        <div class="callout">
+          <div class="callout-num">1</div>
+          <div class="callout-text"><strong>Pill track</strong><span>Full-width rounded track, --card-2 background, 4px inset padding.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">2</div>
+          <div class="callout-text"><strong>Active pill</strong><span>Solid Sacred Pine (#163A2D) with white label, springs between tabs via shared layoutId — no fade, true motion.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">3</div>
+          <div class="callout-text"><strong>Downloads badge</strong><span>Shows live favorites count from localStorage; hidden when zero saved songs.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">4</div>
+          <div class="callout-text"><strong>Content swap</strong><span>AnimatePresence mode="wait" fades+slides the grid below (180ms) on every tap.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENT: SONG CARD -->
+  <section class="block">
+    <div class="block-label">02 · Component anatomy</div>
+    <div class="block-title">Song card</div>
+    <p class="block-sub">The atomic unit of both Trending and Downloads — same component, different data source and a swapped subtitle.</p>
+    <div class="anatomy-row">
+      <div class="anatomy-stage">
+        <div class="song-card-mock">
+          <div class="song-thumb">
+            <div class="song-play-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+          <div class="song-info">
+            <div class="song-info-text">
+              <div class="song-title-mock">Amazing Grace (Live)</div>
+              <div class="song-artist-mock">Bethel Music</div>
+            </div>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#f87171" style="flex-shrink:0;margin-top:2px"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="callouts">
+        <div class="callout">
+          <div class="callout-num">1</div>
+          <div class="callout-text"><strong>16:9 thumbnail</strong><span>YouTube video thumbnail; falls back to a centered music-note glyph if missing.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">2</div>
+          <div class="callout-text"><strong>Play overlay</strong><span>Bottom-right circular button, fixed position regardless of image; swaps to pause icon mid-playback.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">3</div>
+          <div class="callout-text"><strong>Title / subtitle</strong><span>Title 1-line truncate; subtitle is artist name on Trending, language tag on Downloads.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">4</div>
+          <div class="callout-text"><strong>Heart toggle</strong><span>Tap writes/removes from <code>music_favorites_v2</code> in localStorage — instantly reflected in the Downloads tab.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHONE MOCKUPS -->
+  <section class="block">
+    <div class="block-label">03 · Screen states</div>
+    <div class="block-title">Trending vs. Downloads</div>
+    <p class="block-sub">Same shell, same grid, two data sources. The globe chip always shows the active language; tapping it opens the language sheet shown in the next section.</p>
+    <div class="phones">
+
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-app-header">
+              <div>
+                <h2>Worship Music</h2>
+                <p>Uplift your spirit with sacred music</p>
+              </div>
+              <div class="globe-btn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6C8B74" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg>
+                🇮🇳 Telugu
+              </div>
+            </div>
+            <div class="phone-search">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A7468" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+              Search songs, artists…
+            </div>
+            <div class="phone-tabs">
+              <div class="tab-switcher" style="transform:scale(0.92);transform-origin:left center">
+                <div class="tab-pill active">↗ Trending</div>
+                <div class="tab-pill">⬇ Downloads <span class="badge">6</span></div>
+              </div>
+            </div>
+            <div class="phone-grid">
+              <div class="phone-card">
+                <div class="phone-thumb"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">Yesayya Naa Dhevudu</div><div class="pc-sub">Jesus Calls</div></div><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5A7468" stroke-width="2" style="flex-shrink:0"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-thumb alt"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">Nee Prema Naa Pai</div><div class="pc-sub">Blessie Wesly</div></div><svg width="10" height="10" viewBox="0 0 24 24" fill="#f87171" style="flex-shrink:0"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-thumb alt2"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">Yehovah Rapha</div><div class="pc-sub">Telugu Worship</div></div><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5A7468" stroke-width="2" style="flex-shrink:0"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-thumb alt3"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">Sthuthistha</div><div class="pc-sub">Hosanna Ministries</div></div><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5A7468" stroke-width="2" style="flex-shrink:0"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg></div>
+              </div>
+            </div>
+            <div class="phone-mini-player">
+              <div class="mp-art"></div>
+              <div class="mp-text"><div class="mp-title">Nee Prema Naa Pai</div><div class="mp-artist">Blessie Wesly</div></div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#F6F1E7"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+            </div>
+            <div class="phone-navbar">
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><path d="M4 10l7.1-6.2a1.5 1.5 0 011.8 0L20 10"/></svg></div><span>Home</span></div>
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><path d="M2 5.5C2 5.5 6 3 12 5.5 18 3 22 5.5 22 5.5v14S18 17 12 19.5 2 19.5 2 19.5v-14z"/></svg></div><span>Bible</span></div>
+              <div class="nav-item active"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><ellipse cx="7" cy="17" rx="3" ry="2.2"/><ellipse cx="17" cy="14" rx="3" ry="2.2"/><path d="M9.5 16.8V4.5M19.5 13.8V2.5"/></svg></div><span>Music</span></div>
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><circle cx="12" cy="8" r="4.5"/><path d="M4 20c0-3.5 3.5-7 8-7s8 3.5 8 7"/></svg></div><span>Profile</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption"><strong>Trending</strong> · per-language pool, shuffled</div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-app-header">
+              <div>
+                <h2>Worship Music</h2>
+                <p>Uplift your spirit with sacred music</p>
+              </div>
+              <div class="globe-btn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6C8B74" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z"/></svg>
+                🇮🇳 Telugu
+              </div>
+            </div>
+            <div class="phone-search">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5A7468" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+              Search songs, artists…
+            </div>
+            <div class="phone-tabs">
+              <div class="tab-switcher" style="transform:scale(0.92);transform-origin:left center">
+                <div class="tab-pill">↗ Trending</div>
+                <div class="tab-pill active">⬇ Downloads <span class="badge">2</span></div>
+              </div>
+            </div>
+            <div class="phone-grid">
+              <div class="phone-card">
+                <div class="phone-thumb alt"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">Nee Prema Naa Pai</div><div class="pc-sub">Telugu</div></div></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-thumb"><div class="phone-mini-play"><svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>
+                <div class="phone-card-info"><div><div class="pc-title">10,000 Reasons</div><div class="pc-sub">English</div></div></div>
+              </div>
+            </div>
+            <div class="phone-empty" style="margin-top:14px">
+              <span style="font-size:9px;color:var(--text-subtle)">Saved songs persist offline via localStorage — no account required.</span>
+            </div>
+            <div style="flex:1"></div>
+            <div class="phone-navbar">
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><path d="M4 10l7.1-6.2a1.5 1.5 0 011.8 0L20 10"/></svg></div><span>Home</span></div>
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><path d="M2 5.5C2 5.5 6 3 12 5.5 18 3 22 5.5 22 5.5v14S18 17 12 19.5 2 19.5 2 19.5v-14z"/></svg></div><span>Bible</span></div>
+              <div class="nav-item active"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><ellipse cx="7" cy="17" rx="3" ry="2.2"/><ellipse cx="17" cy="14" rx="3" ry="2.2"/><path d="M9.5 16.8V4.5M19.5 13.8V2.5"/></svg></div><span>Music</span></div>
+              <div class="nav-item"><div class="nav-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8FA89B" stroke-width="1.8"><circle cx="12" cy="8" r="4.5"/><path d="M4 20c0-3.5 3.5-7 8-7s8 3.5 8 7"/></svg></div><span>Profile</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption"><strong>Downloads</strong> · favorited across all languages</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LANGUAGE SHEET -->
+  <section class="block">
+    <div class="block-label">03 · Screen states</div>
+    <div class="block-title">Language picker — bottom sheet</div>
+    <p class="block-sub">Opened from the globe chip. Replaces the earlier chip-row pattern from the rest of the app (BibleLibrary tab) for consistency.</p>
+    <div class="sheet-demo">
+      <div class="sheet-frame">
+        <div class="sheet-backdrop"></div>
+        <div class="sheet-panel">
+          <div class="sheet-handle"></div>
+          <div class="sheet-row selected">
+            <span class="sheet-flag">🇮🇳</span>
+            <div class="sheet-lang-text"><strong>తెలుగు</strong><span>Telugu Christian</span></div>
+            <svg class="sheet-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C8B74" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="sheet-row">
+            <span class="sheet-flag">🇬🇧</span>
+            <div class="sheet-lang-text"><strong>English</strong><span>Worship & Praise</span></div>
+          </div>
+          <div class="sheet-row">
+            <span class="sheet-flag">🇮🇳</span>
+            <div class="sheet-lang-text"><strong>हिंदी</strong><span>Hindi Christian</span></div>
+          </div>
+          <div class="sheet-row">
+            <span class="sheet-flag">🇮🇳</span>
+            <div class="sheet-lang-text"><strong>தமிழ்</strong><span>Tamil Christian</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="callouts">
+        <div class="callout">
+          <div class="callout-num">1</div>
+          <div class="callout-text"><strong>Backdrop</strong><span>50% black + blur, dismiss on tap-outside, AnimatePresence fade.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">2</div>
+          <div class="callout-text"><strong>Spring sheet</strong><span>Slides up from y:100% with a damped spring (stiffness 300, damping 30).</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">3</div>
+          <div class="callout-text"><strong>Selected row</strong><span>Sage-tinted background + border + trailing checkmark; all 6 languages always visible, no scroll-snap needed.</span></div>
+        </div>
+        <div class="callout">
+          <div class="callout-num">4</div>
+          <div class="callout-text"><strong>On select</strong><span>Sets language, closes sheet, clears active search query, re-fetches Trending pool for that language.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTION FLOW -->
+  <section class="block">
+    <div class="block-label">04 · Interaction flow</div>
+    <div class="block-title">How the four core actions resolve</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B89B5E" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></div>
+        <h4>Search</h4>
+        <p>Keystroke → <code>400ms</code> debounce → <code>GET /api/audio/search</code> scoped to active language → Related (first 6) + full Results list.</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B89B5E" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg></div>
+        <h4>Tab switch</h4>
+        <p>Tap pill → local state flips → shared <code>layoutId</code> springs the active pill → grid content cross-fades via <code>AnimatePresence</code>.</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="#f87171"><path d="M12 21s-6.7-4.3-9.3-8.1C.6 9.8 1.6 6 5 5c2-.1 3.5 1 4.4 2.4C10.3 6 11.8 4.9 13.8 5c3.4 1 4.4 4.8 2.3 7.9C19.7 16.7 12 21 12 21z"/></svg></div>
+        <h4>Favorite</h4>
+        <p>Heart tap → toggled in-memory → synced to <code>localStorage["music_favorites_v2"]</code> → Downloads tab reads the same key, no API round-trip.</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="#F6F1E7"><path d="M8 5v14l11-7z"/></svg></div>
+        <h4>Play</h4>
+        <p>Play tap → <code>GET /api/audio/url/:videoId</code> resolves a stream URL → loaded into an <code>HTMLAudioElement</code> → mini player mounts above the bottom nav.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="report-footer">
+    <span>Generated from the live Songs.tsx implementation — not a separate design mock.</span>
+    <span class="fmono">Bible App · Music Tab · v1</span>
+  </footer>
+
+</main>
+</body>
+</html>

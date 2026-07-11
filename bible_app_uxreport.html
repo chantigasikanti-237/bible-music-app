@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bible App — UI/UX Prototype Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    img, svg { display: block; max-width: 100%; }
+
+    :root {
+      --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+      --bg:        #0D1410;
+      --surface:   #1E2822;
+      --surface-2: #243029;
+      --surface-3: #2A3830;
+      --text:      #FFFFFF;
+      --text-muted:#A8C4B4;
+      --text-sub:  #5A7A6A;
+      --border:    #27352F;
+      --accent:    #8FD8B5;
+      --accent-2:  #17624D;
+      --accent-3:  #6FD4A8;
+      --warm:      #FFFCF7;
+      --error:     #FFB4AB;
+      --info:      #90CAF9;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ────────────────────────────────────── */
+    .page { max-width: 1140px; margin: 0 auto; padding: 0 32px 80px; }
+
+    /* ── Sticky nav ────────────────────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,20,16,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+    }
+    .topbar-inner {
+      max-width: 1140px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px; gap: 24px;
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .topbar-logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--accent-2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .topbar-logo svg { width: 14px; height: 14px; }
+    .topbar-name { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.2px; }
+    .topbar-links { display: flex; align-items: center; gap: 4px; }
+    .topbar-links a {
+      font-size: 13px; font-weight: 500; color: var(--text-muted);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .topbar-links a:hover { background: var(--surface); color: var(--text); }
+    .topbar-badge {
+      font-size: 11px; font-weight: 600; padding: 4px 10px;
+      border-radius: 20px; background: var(--accent-2);
+      color: var(--warm); letter-spacing: 0.3px;
+    }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      padding: 72px 0 64px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+    }
+    .hero-tag {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: var(--accent); text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 20px;
+    }
+    .hero-title {
+      font-size: 52px; font-weight: 800; line-height: 1.05;
+      letter-spacing: -1.5px; color: var(--text);
+      margin-bottom: 16px;
+    }
+    .hero-title span { color: var(--accent); }
+    .hero-desc {
+      font-size: 16px; color: var(--text-muted); line-height: 1.65;
+      margin-bottom: 28px; max-width: 420px;
+    }
+    .hero-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .meta-pill {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+    }
+    .meta-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .dot-green { background: var(--accent); }
+    .dot-blue  { background: var(--info); }
+    .dot-warn  { background: #E1BC78; }
+
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(2,1fr); gap: 12px;
+    }
+    .hstat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px;
+    }
+    .hstat-num {
+      font-size: 36px; font-weight: 800; color: var(--accent);
+      font-family: var(--font-mono); letter-spacing: -1px; line-height: 1;
+      margin-bottom: 6px;
+    }
+    .hstat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+    /* ── Section headers ───────────────────────────── */
+    .section { padding: 64px 0 0; }
+    .sec-header { margin-bottom: 36px; }
+    .sec-tag {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: var(--accent); text-transform: uppercase;
+      font-family: var(--font-mono); margin-bottom: 10px;
+    }
+    .sec-title {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.6px;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .sec-desc { font-size: 14px; color: var(--text-muted); max-width: 560px; }
+    .divider { height: 1px; background: var(--border); margin: 64px 0 0; }
+
+    /* ── Color tokens ──────────────────────────────── */
+    .token-grid {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+    }
+    .token-card {
+      border-radius: var(--radius-md); overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .token-swatch { height: 72px; }
+    .token-info { background: var(--surface-2); padding: 12px 14px; }
+    .token-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .token-hex  { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .token-use  { font-size: 10px; color: var(--text-sub); margin-top: 4px; }
+
+    /* ── Clay components ───────────────────────────── */
+    .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .comp-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 28px;
+    }
+    .comp-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.8px;
+      color: var(--text-sub); text-transform: uppercase;
+      font-family: var(--font-mono); margin-bottom: 20px;
+    }
+
+    /* Snackbars */
+    .snack {
+      display: flex; align-items: center; gap: 12px;
+      border-radius: 18px; padding: 13px 18px; margin-bottom: 10px;
+    }
+    .snack:last-child { margin-bottom: 0; }
+    .snack-icon {
+      width: 30px; height: 30px; border-radius: 15px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 13px;
+    }
+    .snack-text .snack-title { font-size: 13px; font-weight: 700; color: #fff; }
+    .snack-text .snack-sub   { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 1px; }
+    .snack.success { background: #183326; }
+    .snack.error   { background: #3D1518; }
+    .snack.info    { background: #0D2B35; }
+    .snack.success .snack-icon { background: rgba(111,212,168,0.2); color: #6FD4A8; }
+    .snack.error   .snack-icon { background: rgba(255,180,171,0.2); color: #FFB4AB; }
+    .snack.info    .snack-icon { background: rgba(144,202,249,0.2); color: #90CAF9; }
+    .snack-spec { font-size: 11px; color: var(--text-sub); font-family: var(--font-mono); margin-top: 16px; line-height: 1.7; }
+
+    /* Progress indicators */
+    .progress-demos { display: flex; gap: 24px; align-items: flex-start; }
+    .progress-item { flex: 1; }
+    .prog-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 14px; }
+    .spinner-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+    .spinner-svg { animation: spin 1.2s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .linear-track { height: 4px; border-radius: 4px; background: var(--border); overflow: hidden; margin-bottom: 12px; }
+    .linear-fill  { height: 100%; border-radius: 4px; background: var(--accent); animation: fill-grow 2s ease infinite alternate; }
+    @keyframes fill-grow { from { width: 30%; } to { width: 85%; } }
+    .prog-spec { font-size: 10px; color: var(--text-sub); font-family: var(--font-mono); line-height: 1.7; }
+
+    /* Full-page loader */
+    .loader-phone-wrap { display: flex; justify-content: center; }
+    .loader-mini-phone {
+      width: 180px; height: 200px; border-radius: 24px;
+      background: #1E2822; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .clay-card-loader {
+      background: #1E2822; border-radius: 20px; padding: 28px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), 0 0 0 1px rgba(143,216,181,0.06);
+    }
+
+    /* Dialog */
+    .dialog-preview {
+      background: var(--surface-2); border-radius: 20px; padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .dialog-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .dialog-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+    .dialog-track { height: 4px; border-radius: 4px; background: var(--border); overflow: hidden; margin-bottom: 8px; }
+    .dialog-fill  { width: 65%; height: 100%; border-radius: 4px; background: var(--accent); }
+    .dialog-caption { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
+    .dialog-cancel {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--border); border-radius: 10px; padding: 8px 18px;
+      font-size: 13px; font-weight: 600; color: var(--accent);
+    }
+
+    /* ── Phone prototype ───────────────────────────── */
+    .prototype-wrap {
+      display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start;
+    }
+    .phone-frame {
+      width: 320px; height: 640px; border-radius: 44px;
+      background: #0A0F0D;
+      border: 2px solid #2A3830;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(143,216,181,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);
+      position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .phone-notch {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 24px; background: #0A0F0D;
+      border-radius: 12px; z-index: 10;
+    }
+    .phone-screen {
+      position: absolute; inset: 0; border-radius: 42px; overflow: hidden;
+    }
+    .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+    .screen.active { display: flex; }
+    .screen-bg { background: #1E2822; flex: 1; overflow: hidden; position: relative; }
+
+    /* Status bar */
+    .status-bar {
+      height: 44px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; flex-shrink: 0;
+    }
+    .status-time { font-size: 12px; font-weight: 700; color: var(--text); }
+    .status-icons { display: flex; gap: 4px; align-items: center; }
+    .status-icons span { font-size: 11px; color: var(--text); }
+
+    /* Screen content */
+    .screen-content { flex: 1; overflow: hidden; padding: 0 20px; }
+
+    /* Bottom nav */
+    .phone-nav {
+      display: flex; justify-content: space-around; align-items: center;
+      background: #1C2820; padding: 10px 0 16px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .pnav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; padding: 4px 10px; border-radius: 12px;
+      transition: all 0.15s;
+    }
+    .pnav-item.active .pnav-icon { color: var(--accent); }
+    .pnav-item.active .pnav-lbl  { color: var(--accent); font-weight: 700; }
+    .pnav-icon { font-size: 18px; color: rgba(168,196,180,0.5); line-height: 1; }
+    .pnav-lbl  { font-size: 9px; color: rgba(168,196,180,0.5); font-weight: 500; }
+    .pnav-dot  { width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
+
+    /* ── Home screen ─── */
+    .sh-greet { padding-top: 14px; margin-bottom: 16px; }
+    .sh-greet-sub { font-size: 11px; color: var(--text-muted); }
+    .sh-greet-name { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
+    .sh-card {
+      background: var(--surface-2); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+    }
+    .sh-card-tag { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+    .sh-card-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); margin-bottom: 8px; }
+    .sh-bar { height: 3px; border-radius: 3px; background: var(--border); margin-bottom: 6px; overflow: hidden; }
+    .sh-bar-fill { height: 100%; width: 60%; background: var(--accent); border-radius: 3px; }
+    .sh-card-sub { font-size: 10px; color: var(--text-muted); }
+    .sh-verse-card {
+      background: var(--accent-2); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+    }
+    .sh-verse-tag { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent-3); text-transform: uppercase; margin-bottom: 6px; }
+    .sh-verse-text { font-size: 12px; color: var(--warm); line-height: 1.5; margin-bottom: 6px; }
+    .sh-verse-ref  { font-size: 10px; color: var(--accent-3); font-weight: 700; }
+    .sh-quick-label { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .sh-quick-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .sh-quick-tile {
+      background: var(--surface-2); border-radius: 12px; padding: 12px 10px;
+    }
+    .sh-tile-icon { font-size: 18px; margin-bottom: 4px; }
+    .sh-tile-name { font-size: 11px; font-weight: 700; color: var(--text); }
+    .sh-tile-sub  { font-size: 9px; color: var(--text-muted); }
+
+    /* ── Bible screen ─── */
+    .sb-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px 10px; flex-shrink: 0;
+    }
+    .sb-book  { font-size: 18px; font-weight: 800; color: var(--text); }
+    .sb-ch    { font-size: 11px; color: var(--accent); }
+    .sb-nav   { display: flex; justify-content: space-between; align-items: center; padding: 8px 20px; flex-shrink: 0; }
+    .sb-nav-btn { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--surface-2); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+    .sb-verses { padding: 8px 20px; overflow: hidden; flex: 1; }
+    .sb-verse  { display: flex; gap: 10px; margin-bottom: 10px; }
+    .sb-vnum   { font-size: 10px; font-weight: 700; color: var(--accent); width: 16px; flex-shrink: 0; padding-top: 2px; }
+    .sb-vtxt   { font-size: 11px; color: var(--text); line-height: 1.6; }
+    .sb-verse.hl .sb-vtxt { color: var(--warm); }
+    .sb-verse.hl { background: rgba(23,98,77,0.3); border-radius: 8px; padding: 6px 8px; margin: -6px -8px 4px; }
+
+    /* ── Music screen ─── */
+    .sm-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface-2); border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 10px; border: 1px solid var(--border);
+    }
+    .sm-search-ph { font-size: 11px; color: rgba(255,255,255,0.3); }
+    .sm-chips { display: flex; gap: 6px; margin-bottom: 12px; }
+    .sm-chip {
+      font-size: 10px; font-weight: 600; border-radius: 20px; padding: 5px 12px;
+    }
+    .sm-chip.active { background: var(--accent-2); color: var(--warm); }
+    .sm-chip.idle   { background: var(--surface-2); color: var(--text-muted); }
+    .sm-song { display: flex; gap: 10px; align-items: center; padding: 8px 0; }
+    .sm-art { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .sm-art.playing { background: var(--accent-2); }
+    .sm-art.idle    { background: var(--border); }
+    .sm-info { flex: 1; }
+    .sm-title { font-size: 12px; font-weight: 700; }
+    .sm-title.playing { color: var(--accent); }
+    .sm-title.idle    { color: var(--text); }
+    .sm-artist { font-size: 10px; color: var(--text-muted); }
+    .sm-mini {
+      margin: 6px 0; background: var(--surface-2); border-radius: 14px; padding: 10px 14px;
+    }
+    .sm-mini-row { display: flex; justify-content: space-between; align-items: center; }
+    .sm-mini-info { display: flex; gap: 8px; align-items: center; }
+    .sm-mini-art { width: 30px; height: 30px; border-radius: 6px; background: var(--accent-2); }
+    .sm-mini-title { font-size: 11px; font-weight: 700; color: var(--text); }
+    .sm-mini-artist { font-size: 9px; color: var(--text-muted); }
+    .sm-mini-ctrls { display: flex; gap: 10px; font-size: 16px; color: var(--text-muted); }
+    .sm-mini-ctrls .play { color: var(--accent); }
+    .sm-mini-prog { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .sm-mini-fill { width: 40%; height: 100%; background: var(--accent); }
+
+    /* ── Profile screen ─── */
+    .sp-avatar-wrap { display: flex; justify-content: center; padding: 14px 0 12px; }
+    .sp-avatar { width: 56px; height: 56px; border-radius: 28px; background: var(--accent-2); }
+    .sp-name   { text-align: center; font-size: 16px; font-weight: 800; color: var(--text); }
+    .sp-email  { text-align: center; font-size: 10px; color: var(--text-muted); margin-bottom: 12px; }
+    .sp-stats  {
+      display: flex; background: #1A2520; border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+    }
+    .sp-stat   { flex: 1; padding: 12px 0; text-align: center; }
+    .sp-stat + .sp-stat { border-left: 1px solid var(--border); }
+    .sp-stat-val { font-size: 18px; font-weight: 800; color: var(--accent); }
+    .sp-stat-lbl { font-size: 9px; color: var(--text-muted); }
+    .sp-bm-label { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .sp-bm {
+      background: var(--surface-2); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px;
+    }
+    .sp-bm-ref  { font-size: 10px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+    .sp-bm-text { font-size: 10px; color: rgba(255,255,255,0.7); }
+    .sp-logout  {
+      background: #3D1518; border-radius: 12px; padding: 10px;
+      text-align: center; font-size: 12px; font-weight: 700; color: #FFB4AB;
+      margin-top: 8px;
+    }
+
+    /* ── Auth screen ─── */
+    .sa-logo  {
+      width: 44px; height: 44px; border-radius: 14px; background: var(--accent-2);
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      margin-bottom: 20px; margin-top: 14px;
+    }
+    .sa-title { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.4px; margin-bottom: 4px; }
+    .sa-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 22px; }
+    .sa-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .sa-input {
+      background: var(--surface-2); border-radius: 12px; padding: 12px 14px;
+      font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 12px;
+      border: 1px solid var(--border); width: 100%;
+    }
+    .sa-btn {
+      background: var(--accent-2); border-radius: 14px; padding: 14px;
+      text-align: center; font-size: 14px; font-weight: 800;
+      color: var(--warm); margin-bottom: 16px; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(23,98,77,0.4);
+    }
+    .sa-link-row { text-align: center; font-size: 12px; color: var(--text-muted); }
+    .sa-link { color: var(--accent); font-weight: 700; }
+
+    /* ── Screen switcher ────────────────────────────── */
+    .proto-controls { padding-top: 8px; }
+    .proto-tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px;
+    }
+    .proto-tab {
+      font-size: 13px; font-weight: 600; padding: 8px 18px;
+      border-radius: 20px; cursor: pointer; border: none;
+      background: var(--surface-2); color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .proto-tab.active, .proto-tab:hover {
+      background: var(--accent-2); color: var(--warm);
+    }
+    .screen-doc { display: none; }
+    .screen-doc.active { display: block; }
+    .sdoc-title {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.4px;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .sdoc-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+    .sdoc-flows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .sdoc-flow {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px;
+    }
+    .flow-num {
+      width: 24px; height: 24px; border-radius: 12px;
+      background: var(--accent-2); color: var(--warm);
+      font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .flow-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .flow-text strong { color: var(--text); }
+    .sdoc-api-tag {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      color: var(--text-sub); text-transform: uppercase; font-family: var(--font-mono);
+      margin-bottom: 10px;
+    }
+    .api-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .api-row:last-child { border-bottom: none; }
+    .api-method {
+      font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+      padding: 2px 8px; border-radius: 4px; min-width: 40px; text-align: center;
+    }
+    .get  { background: rgba(143,216,181,0.15); color: var(--accent); }
+    .post { background: rgba(144,202,249,0.15); color: var(--info); }
+    .del  { background: rgba(255,180,171,0.15); color: var(--error); }
+    .api-path { font-size: 11px; font-family: var(--font-mono); color: var(--text); flex: 1; }
+    .api-desc { font-size: 11px; color: var(--text-muted); }
+    .api-auth {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+      color: #E1BC78; background: rgba(225,188,120,0.12);
+      padding: 1px 6px; border-radius: 4px;
+    }
+
+    /* ── API section ────────────────────────────────── */
+    .api-group { margin-bottom: 32px; }
+    .api-group-title {
+      font-size: 14px; font-weight: 700; color: var(--text);
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .api-table {
+      width: 100%; border-collapse: collapse;
+      background: var(--surface); border-radius: var(--radius-lg);
+      overflow: hidden; border: 1px solid var(--border);
+    }
+    .api-table th {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-sub);
+      font-family: var(--font-mono);
+      padding: 10px 16px; background: var(--surface-2);
+      text-align: left;
+    }
+    .api-table td {
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      font-size: 12px; vertical-align: middle;
+    }
+    .api-table tr:hover td { background: var(--surface-2); }
+    .lock-badge {
+      font-size: 9px; font-weight: 700; color: #E1BC78;
+      background: rgba(225,188,120,0.12); padding: 1px 6px;
+      border-radius: 4px; white-space: nowrap;
+    }
+    .rate-badge {
+      font-size: 9px; font-weight: 700; color: var(--accent);
+      background: rgba(143,216,181,0.1); padding: 1px 6px;
+      border-radius: 4px; white-space: nowrap;
+    }
+
+    /* ── Animations ─────────────────────────────────── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fade-up 0.5s ease both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    /* ── Footer ─────────────────────────────────────── */
+    .footer {
+      margin-top: 80px; padding: 32px 0; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-left { font-size: 12px; color: var(--text-sub); }
+    .footer-right { display: flex; gap: 20px; }
+    .footer-link { font-size: 12px; color: var(--text-muted); text-decoration: none; }
+    .footer-link:hover { color: var(--accent); }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .token-grid { grid-template-columns: repeat(2,1fr); }
+      .comp-grid { grid-template-columns: 1fr; }
+      .prototype-wrap { grid-template-columns: 1fr; }
+      .phone-frame { margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top nav ── -->
+<nav class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="topbar-brand">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 14 14" fill="none">
+          <rect x="3" y="1" width="2" height="10" rx="1" fill="white"/>
+          <rect x="5" y="2" width="6" height="2" rx="1" fill="white"/>
+        </svg>
+      </div>
+      <span class="topbar-name">Bible App</span>
+    </a>
+    <div class="topbar-links">
+      <a href="#tokens">Tokens</a>
+      <a href="#components">Components</a>
+      <a href="#prototype">Prototype</a>
+      <a href="#api">API</a>
+    </div>
+    <span class="topbar-badge">Clay UI v1.0</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ── Hero ── -->
+  <section class="hero fade-up">
+    <div>
+      <div class="hero-tag">UI/UX Prototype Report</div>
+      <h1 class="hero-title">Bible App<br><span>Clay UI</span><br>Design System</h1>
+      <p class="hero-desc">A minimalist dark forest-green design system built for Bible reading, worship music, and daily spiritual practice. Flat clay surfaces, sage-green accents, warm typography.</p>
+      <div class="hero-meta">
+        <div class="meta-pill"><div class="meta-dot dot-green"></div>Flutter Web</div>
+        <div class="meta-pill"><div class="meta-dot dot-blue"></div>Node.js API</div>
+        <div class="meta-pill"><div class="meta-dot dot-warn"></div>MongoDB</div>
+      </div>
+    </div>
+    <div class="hero-stats fade-up delay-2">
+      <div class="hstat">
+        <div class="hstat-num">5</div>
+        <div class="hstat-label">App Screens</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num">14</div>
+        <div class="hstat-label">Color Tokens</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num">30</div>
+        <div class="hstat-label">SnackBar Calls</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num">24+</div>
+        <div class="hstat-label">API Endpoints</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Design Tokens ── -->
+  <section class="section" id="tokens">
+    <div class="sec-header">
+      <div class="sec-tag">[ 01 — Tokens ]</div>
+      <h2 class="sec-title">Design Token Colors</h2>
+      <p class="sec-desc">All tokens live in <code style="font-family:var(--font-mono);color:var(--accent);font-size:13px">lib/theme/app_colors.dart</code> and map 1:1 to the Figma variable collection "Clay UI — Colors".</p>
+    </div>
+    <div class="token-grid">
+      <div class="token-card">
+        <div class="token-swatch" style="background:#1E2822"></div>
+        <div class="token-info">
+          <div class="token-name">surface/background</div>
+          <div class="token-hex">#1E2822</div>
+          <div class="token-use">App background, clay loader</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#243029"></div>
+        <div class="token-info">
+          <div class="token-name">surface/card</div>
+          <div class="token-hex">#243029</div>
+          <div class="token-use">Cards, inputs, bottom sheet</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#27352F"></div>
+        <div class="token-info">
+          <div class="token-name">surface/track</div>
+          <div class="token-hex">#27352F</div>
+          <div class="token-use">Progress bar background</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#101714"></div>
+        <div class="token-info">
+          <div class="token-name">scaffold (dark)</div>
+          <div class="token-hex">#101714</div>
+          <div class="token-use">Page/scaffold background</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#8FD8B5"></div>
+        <div class="token-info">
+          <div class="token-name">accent/sage-green</div>
+          <div class="token-hex">#8FD8B5</div>
+          <div class="token-use">Spinner, nav active, links</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#17624D"></div>
+        <div class="token-info">
+          <div class="token-name">accent/forest-green</div>
+          <div class="token-hex">#17624D</div>
+          <div class="token-use">CTA buttons, logo, filled btn</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#6FD4A8"></div>
+        <div class="token-info">
+          <div class="token-name">snack/success-icon</div>
+          <div class="token-hex">#6FD4A8</div>
+          <div class="token-use">✓ check icon in snackbar</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#FFB4AB"></div>
+        <div class="token-info">
+          <div class="token-name">snack/error-icon</div>
+          <div class="token-hex">#FFB4AB</div>
+          <div class="token-use">! error icon in snackbar</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#90CAF9"></div>
+        <div class="token-info">
+          <div class="token-name">snack/info-icon</div>
+          <div class="token-hex">#90CAF9</div>
+          <div class="token-use">ⓘ info icon in snackbar</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#183326"></div>
+        <div class="token-info">
+          <div class="token-name">snack/success-bg</div>
+          <div class="token-hex">#183326</div>
+          <div class="token-use">Success snackbar background</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#3D1518"></div>
+        <div class="token-info">
+          <div class="token-name">snack/error-bg</div>
+          <div class="token-hex">#3D1518</div>
+          <div class="token-use">Error snackbar background</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#0D2B35"></div>
+        <div class="token-info">
+          <div class="token-name">snack/info-bg</div>
+          <div class="token-hex">#0D2B35</div>
+          <div class="token-use">Info snackbar background</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#FFFCF7;border-top:1px solid #27352F"></div>
+        <div class="token-info">
+          <div class="token-name">light/parchment</div>
+          <div class="token-hex">#FFFCF7</div>
+          <div class="token-use">CTA text, light mode surface</div>
+        </div>
+      </div>
+      <div class="token-card">
+        <div class="token-swatch" style="background:#A8C4B4"></div>
+        <div class="token-info">
+          <div class="token-name">text/secondary</div>
+          <div class="token-hex">#A8C4B4</div>
+          <div class="token-use">Subtitles, captions, labels</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Clay Components ── -->
+  <section class="section" id="components">
+    <div class="sec-header">
+      <div class="sec-tag">[ 02 — Components ]</div>
+      <h2 class="sec-title">Clay UI Components</h2>
+      <p class="sec-desc">All helpers are in <code style="font-family:var(--font-mono);color:var(--accent);font-size:13px">lib/theme/clay_decorations.dart</code>. elevation: 0 across all surfaces.</p>
+    </div>
+    <div class="comp-grid">
+
+      <!-- Snackbars -->
+      <div class="comp-card">
+        <div class="comp-label">Snackbars — 30 usages</div>
+        <div class="snack success">
+          <div class="snack-icon">✓</div>
+          <div class="snack-text">
+            <div class="snack-title">Verse saved to bookmarks</div>
+            <div class="snack-sub">Tap to view bookmarks</div>
+          </div>
+        </div>
+        <div class="snack error">
+          <div class="snack-icon">!</div>
+          <div class="snack-text">
+            <div class="snack-title">Audio not available offline</div>
+            <div class="snack-sub">Download to listen offline</div>
+          </div>
+        </div>
+        <div class="snack info">
+          <div class="snack-icon">i</div>
+          <div class="snack-text">
+            <div class="snack-title">Added to favorites</div>
+          </div>
+        </div>
+        <div class="snack-spec">elevation: 0  •  borderRadius: 18<br>floating margin: 16px  •  icon row layout<br>ClaySnackType.success / .error / .info</div>
+      </div>
+
+      <!-- Progress indicators -->
+      <div class="comp-card">
+        <div class="comp-label">Progress Indicators — Global Theme</div>
+        <div class="progress-demos">
+          <div class="progress-item">
+            <div class="prog-label">CircularProgressIndicator</div>
+            <div class="spinner-wrap">
+              <svg class="spinner-svg" width="44" height="44" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="18" stroke="#27352F" stroke-width="4" fill="none"/>
+                <circle cx="22" cy="22" r="18" stroke="#8FD8B5" stroke-width="4" fill="none"
+                  stroke-dasharray="90 24" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+              </svg>
+            </div>
+            <div class="prog-spec">color: #8FD8B5<br>track: transparent<br>strokeWidth: 3</div>
+          </div>
+          <div class="progress-item">
+            <div class="prog-label">LinearProgressIndicator</div>
+            <div class="linear-track"><div class="linear-fill"></div></div>
+            <div class="prog-spec">color: #8FD8B5<br>track: #27352F<br>height: 4px • radius: 4px</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-page loader -->
+      <div class="comp-card">
+        <div class="comp-label">clayLoadingCenter() — 5 locations</div>
+        <div class="loader-phone-wrap">
+          <div class="loader-mini-phone">
+            <div class="clay-card-loader">
+              <svg class="spinner-svg" width="40" height="40" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="16" stroke="#27352F" stroke-width="3" fill="none"/>
+                <circle cx="20" cy="20" r="16" stroke="#8FD8B5" stroke-width="3" fill="none"
+                  stroke-dasharray="80 22" stroke-linecap="round" transform="rotate(-90 20 20)"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="snack-spec" style="margin-top:14px;text-align:center">Surface: #1E2822  •  borderRadius: 24<br>3-layer clay shadow  •  36px padding  •  3px stroke<br>Locations: catalog, chapter, hymns, hymns-more, favorites</div>
+      </div>
+
+      <!-- Dialog -->
+      <div class="comp-card">
+        <div class="comp-label">Dialog — elevation: 0</div>
+        <div class="dialog-preview">
+          <div class="dialog-title">Downloading Whole Book</div>
+          <div class="dialog-sub">Matthew — 28 chapters</div>
+          <div class="dialog-track"><div class="dialog-fill"></div></div>
+          <div class="dialog-caption">18 of 28 chapters</div>
+          <div class="dialog-cancel">Cancel</div>
+        </div>
+        <div class="snack-spec" style="margin-top:14px">Surface: #243029  •  borderRadius: 24<br>elevation: 0  •  flat clay surface<br>LinearProgressIndicator inside</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Prototype ── -->
+  <section class="section" id="prototype">
+    <div class="sec-header">
+      <div class="sec-tag">[ 03 — Prototype ]</div>
+      <h2 class="sec-title">Interactive Screen Flows</h2>
+      <p class="sec-desc">Select a screen to preview the mockup and read the user flow, interactions, and API calls for that screen.</p>
+    </div>
+
+    <div class="prototype-wrap">
+
+      <!-- Phone frame -->
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+
+          <!-- HOME -->
+          <div class="screen active" id="phone-home" style="background:#1E2822">
+            <div class="status-bar">
+              <span class="status-time">9:41</span>
+              <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+            </div>
+            <div class="screen-content">
+              <div class="sh-greet">
+                <div class="sh-greet-sub">Good morning</div>
+                <div class="sh-greet-name">Pranay</div>
+              </div>
+              <div class="sh-card">
+                <div class="sh-card-tag">Continue Reading</div>
+                <div class="sh-card-title">John 3</div>
+                <div class="sh-bar"><div class="sh-bar-fill"></div></div>
+                <div class="sh-card-sub">Chapter 3 of 21  •  Last read 2h ago</div>
+              </div>
+              <div class="sh-verse-card">
+                <div class="sh-verse-tag">Verse of the Day</div>
+                <div class="sh-verse-text">"For God so loved the world that he gave his one and only Son..."</div>
+                <div class="sh-verse-ref">John 3:16  •  NIV</div>
+              </div>
+              <div class="sh-quick-label">Quick Access</div>
+              <div class="sh-quick-grid">
+                <div class="sh-quick-tile">
+                  <div class="sh-tile-icon">📖</div>
+                  <div class="sh-tile-name">Bible</div>
+                  <div class="sh-tile-sub">66 books</div>
+                </div>
+                <div class="sh-quick-tile">
+                  <div class="sh-tile-icon">♫</div>
+                  <div class="sh-tile-name">Music</div>
+                  <div class="sh-tile-sub">Worship</div>
+                </div>
+                <div class="sh-quick-tile">
+                  <div class="sh-tile-icon">★</div>
+                  <div class="sh-tile-name">Saved</div>
+                  <div class="sh-tile-sub">12 verses</div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-nav">
+              <div class="pnav-item active" onclick="switchScreen('home',0)">
+                <div class="pnav-icon">⌂</div><div class="pnav-lbl">Home</div><div class="pnav-dot"></div>
+              </div>
+              <div class="pnav-item" onclick="switchScreen('bible',1)"><div class="pnav-icon">📖</div><div class="pnav-lbl">Bible</div></div>
+              <div class="pnav-item" onclick="switchScreen('music',2)"><div class="pnav-icon">♫</div><div class="pnav-lbl">Music</div></div>
+              <div class="pnav-item" onclick="switchScreen('profile',3)"><div class="pnav-icon">◉</div><div class="pnav-lbl">Profile</div></div>
+            </div>
+          </div>
+
+          <!-- BIBLE -->
+          <div class="screen" id="phone-bible" style="background:#1E2822">
+            <div class="status-bar">
+              <span class="status-time">9:41</span>
+              <div class="status-icons"><span>●●●</span></div>
+            </div>
+            <div class="sb-topbar">
+              <div><div class="sb-book">John</div><div class="sb-ch">Chapter 3  •  NIV</div></div>
+              <div style="font-size:18px;color:var(--text-muted)">⚙</div>
+            </div>
+            <div class="sb-nav">
+              <div class="sb-nav-btn">‹ John 2</div>
+              <div class="sb-nav-btn">John 4 ›</div>
+            </div>
+            <div class="sb-verses">
+              <div class="sb-verse"><span class="sb-vnum">1</span><span class="sb-vtxt">Now there was a Pharisee named Nicodemus who was a member of the Jewish ruling council.</span></div>
+              <div class="sb-verse"><span class="sb-vnum">2</span><span class="sb-vtxt">He came to Jesus at night and said, "Rabbi, we know that you are a teacher who has come from God."</span></div>
+              <div class="sb-verse"><span class="sb-vnum">3</span><span class="sb-vtxt">Jesus replied, "Very truly I tell you, no one can see the kingdom of God unless they are born again."</span></div>
+              <div class="sb-verse hl"><span class="sb-vnum">16</span><span class="sb-vtxt">For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish.</span></div>
+            </div>
+            <div class="phone-nav">
+              <div class="pnav-item" onclick="switchScreen('home',0)"><div class="pnav-icon">⌂</div><div class="pnav-lbl">Home</div></div>
+              <div class="pnav-item active" onclick="switchScreen('bible',1)">
+                <div class="pnav-icon">📖</div><div class="pnav-lbl">Bible</div><div class="pnav-dot"></div>
+              </div>
+              <div class="pnav-item" onclick="switchScreen('music',2)"><div class="pnav-icon">♫</div><div class="pnav-lbl">Music</div></div>
+              <div class="pnav-item" onclick="switchScreen('profile',3)"><div class="pnav-icon">◉</div><div class="pnav-lbl">Profile</div></div>
+            </div>
+          </div>
+
+          <!-- MUSIC -->
+          <div class="screen" id="phone-music" style="background:#1E2822">
+            <div class="status-bar"><span class="status-time">9:41</span></div>
+            <div style="padding:0 20px 10px;font-size:18px;font-weight:800;letter-spacing:-0.3px">Worship Music</div>
+            <div class="screen-content">
+              <div class="sm-search"><span style="font-size:13px">🔍</span><span class="sm-search-ph">Search songs, artists...</span></div>
+              <div class="sm-chips">
+                <div class="sm-chip active">English</div>
+                <div class="sm-chip idle">Telugu</div>
+                <div class="sm-chip idle">Hindi</div>
+              </div>
+              <div class="sm-song">
+                <div class="sm-art playing">▶</div>
+                <div class="sm-info"><div class="sm-title playing">Amazing Grace</div><div class="sm-artist">Traditional  •  4:32</div></div>
+              </div>
+              <div class="sm-song">
+                <div class="sm-art idle" style="font-size:10px;color:var(--text-muted)">♩</div>
+                <div class="sm-info"><div class="sm-title idle">How Great Thou Art</div><div class="sm-artist">Stuart Hine  •  3:58</div></div>
+              </div>
+              <div class="sm-song">
+                <div class="sm-art idle" style="font-size:10px;color:var(--text-muted)">♩</div>
+                <div class="sm-info"><div class="sm-title idle">10,000 Reasons</div><div class="sm-artist">Matt Redman  •  5:12</div></div>
+              </div>
+              <div class="sm-mini">
+                <div class="sm-mini-row">
+                  <div class="sm-mini-info">
+                    <div class="sm-mini-art"></div>
+                    <div><div class="sm-mini-title">Amazing Grace</div><div class="sm-mini-artist">Traditional</div></div>
+                  </div>
+                  <div class="sm-mini-ctrls"><span>⏮</span><span class="play">⏸</span><span>⏭</span></div>
+                </div>
+                <div class="sm-mini-prog"><div class="sm-mini-fill"></div></div>
+              </div>
+            </div>
+            <div class="phone-nav">
+              <div class="pnav-item" onclick="switchScreen('home',0)"><div class="pnav-icon">⌂</div><div class="pnav-lbl">Home</div></div>
+              <div class="pnav-item" onclick="switchScreen('bible',1)"><div class="pnav-icon">📖</div><div class="pnav-lbl">Bible</div></div>
+              <div class="pnav-item active" onclick="switchScreen('music',2)">
+                <div class="pnav-icon">♫</div><div class="pnav-lbl">Music</div><div class="pnav-dot"></div>
+              </div>
+              <div class="pnav-item" onclick="switchScreen('profile',3)"><div class="pnav-icon">◉</div><div class="pnav-lbl">Profile</div></div>
+            </div>
+          </div>
+
+          <!-- PROFILE -->
+          <div class="screen" id="phone-profile" style="background:#1E2822">
+            <div class="status-bar"><span class="status-time">9:41</span></div>
+            <div class="screen-content">
+              <div class="sp-avatar-wrap"><div class="sp-avatar"></div></div>
+              <div class="sp-name">Pranay Gasikanti</div>
+              <div class="sp-email">srirajarajeshwarivo@gmail.com</div>
+              <div class="sp-stats">
+                <div class="sp-stat"><div class="sp-stat-val">12</div><div class="sp-stat-lbl">Bookmarks</div></div>
+                <div class="sp-stat"><div class="sp-stat-val">5</div><div class="sp-stat-lbl">Books</div></div>
+                <div class="sp-stat"><div class="sp-stat-val">34</div><div class="sp-stat-lbl">Days</div></div>
+              </div>
+              <div class="sp-bm-label">Bookmarked Verses</div>
+              <div class="sp-bm"><div class="sp-bm-ref">John 3:16</div><div class="sp-bm-text">For God so loved the world...</div></div>
+              <div class="sp-bm"><div class="sp-bm-ref">Psalm 23:1</div><div class="sp-bm-text">The Lord is my shepherd...</div></div>
+              <div class="sp-bm"><div class="sp-bm-ref">Phil 4:13</div><div class="sp-bm-text">I can do all things through Christ...</div></div>
+              <div class="sp-logout">Sign Out</div>
+            </div>
+            <div class="phone-nav">
+              <div class="pnav-item" onclick="switchScreen('home',0)"><div class="pnav-icon">⌂</div><div class="pnav-lbl">Home</div></div>
+              <div class="pnav-item" onclick="switchScreen('bible',1)"><div class="pnav-icon">📖</div><div class="pnav-lbl">Bible</div></div>
+              <div class="pnav-item" onclick="switchScreen('music',2)"><div class="pnav-icon">♫</div><div class="pnav-lbl">Music</div></div>
+              <div class="pnav-item active" onclick="switchScreen('profile',3)">
+                <div class="pnav-icon">◉</div><div class="pnav-lbl">Profile</div><div class="pnav-dot"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUTH -->
+          <div class="screen" id="phone-auth" style="background:#1E2822">
+            <div class="status-bar"><span class="status-time">9:41</span></div>
+            <div class="screen-content">
+              <div class="sa-logo">✝</div>
+              <div class="sa-title">Welcome back</div>
+              <div class="sa-sub">Sign in to continue reading</div>
+              <div class="sa-label">Email address</div>
+              <div class="sa-input">you@example.com</div>
+              <div class="sa-label">Password</div>
+              <div class="sa-input">••••••••••</div>
+              <div style="text-align:right;font-size:11px;color:var(--accent);margin-bottom:20px;font-weight:600">Forgot password?</div>
+              <div class="sa-btn">Sign In</div>
+              <div class="sa-link-row">Don't have an account? <span class="sa-link">Create one</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="proto-controls">
+        <div class="proto-tabs">
+          <button class="proto-tab active" onclick="switchDoc('home')">Home</button>
+          <button class="proto-tab" onclick="switchDoc('bible')">Bible Reader</button>
+          <button class="proto-tab" onclick="switchDoc('music')">Music</button>
+          <button class="proto-tab" onclick="switchDoc('profile')">Profile</button>
+          <button class="proto-tab" onclick="switchDoc('auth')">Auth</button>
+        </div>
+
+        <!-- HOME doc -->
+        <div class="screen-doc active" id="doc-home">
+          <div class="sdoc-title">Home Screen</div>
+          <div class="sdoc-desc">Dashboard that greets the user, shows their last reading position (via history API), a verse of the day, and quick-access tiles for the main sections.</div>
+          <div class="sdoc-flows">
+            <div class="sdoc-flow"><div class="flow-num">1</div><div class="flow-text"><strong>Load last position</strong> — calls <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/history/last</code> on mount. Renders Continue Reading card with a LinearProgressIndicator showing chapter progress.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">2</div><div class="flow-text"><strong>Verse of the Day</strong> — pulled from <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/scripture/chapter</code>. Displayed in the forest-green accent card.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">3</div><div class="flow-text"><strong>Quick Access tiles</strong> — Bible, Music, Bookmarks. Tapping navigates to the relevant tab via AppShellController.</div></div>
+          </div>
+          <div class="sdoc-api-tag">API calls on this screen</div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/history/last</span><span class="api-auth">🔒 auth</span></div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/scripture/chapter</span><span class="api-desc">Verse of day</span></div>
+        </div>
+
+        <!-- BIBLE doc -->
+        <div class="screen-doc" id="doc-bible">
+          <div class="sdoc-title">Bible Reader</div>
+          <div class="sdoc-desc">Chapter-by-chapter reading with verse highlighting, prev/next chapter navigation, and long-press to bookmark a verse. Whole-book audio downloads available.</div>
+          <div class="sdoc-flows">
+            <div class="sdoc-flow"><div class="flow-num">1</div><div class="flow-text"><strong>Fetch chapter</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/v1/bibles/:versionId/books/:bookId/chapters/:chNum</code>. Shows <code style="font-family:var(--font-mono);color:var(--accent)">clayLoadingCenter()</code> while loading.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">2</div><div class="flow-text"><strong>Save history</strong> — on chapter open, calls <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/history/update</code> to persist reading position.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">3</div><div class="flow-text"><strong>Long-press verse</strong> — shows success snackbar "Verse saved" after <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/verses/save</code>.</div></div>
+          </div>
+          <div class="sdoc-api-tag">API calls on this screen</div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/v1/bibles/:id/books/:book/chapters/:ch</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/history/update</span><span class="api-auth">🔒 auth</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/verses/save</span><span class="api-auth">🔒 auth</span></div>
+        </div>
+
+        <!-- MUSIC doc -->
+        <div class="screen-doc" id="doc-music">
+          <div class="sdoc-title">Music / Worship</div>
+          <div class="sdoc-desc">Language-filtered song list with YouTube audio streaming proxy. Mini player persists across tabs. Mutual exclusion with Bible audio player.</div>
+          <div class="sdoc-flows">
+            <div class="sdoc-flow"><div class="flow-num">1</div><div class="flow-text"><strong>Load songs</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/audio/songs/:language</code>. Filter chips switch language. Shows <code style="font-family:var(--font-mono);color:var(--accent)">clayLoadingCenter()</code> on first load.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">2</div><div class="flow-text"><strong>Stream audio</strong> — tapping a song calls <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/audio/url/:videoId</code> then streams via proxy.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">3</div><div class="flow-text"><strong>Search</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/audio/search?q=</code> debounced at 400ms.</div></div>
+          </div>
+          <div class="sdoc-api-tag">API calls on this screen</div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/audio/songs/:language</span></div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/audio/search?q=</span></div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/audio/url/:videoId</span></div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/audio/stream/:videoId</span><span class="api-desc">Proxy stream</span></div>
+        </div>
+
+        <!-- PROFILE doc -->
+        <div class="screen-doc" id="doc-profile">
+          <div class="sdoc-title">Profile</div>
+          <div class="sdoc-desc">User stats, bookmarked verses management, reading streak, and sign-out. All data requires JWT auth.</div>
+          <div class="sdoc-flows">
+            <div class="sdoc-flow"><div class="flow-num">1</div><div class="flow-text"><strong>Load bookmarks</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/v1/users/me/bookmarks</code>. Swipe-to-delete triggers <code style="font-family:var(--font-mono);color:var(--accent)">DELETE /api/verses/:id</code>.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">2</div><div class="flow-text"><strong>Load history</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">GET /api/v1/users/me/history</code> for reading streak and stats.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">3</div><div class="flow-text"><strong>Sign out</strong> — calls <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/auth/logout</code> then clears local session.</div></div>
+          </div>
+          <div class="sdoc-api-tag">API calls on this screen</div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/v1/users/me/bookmarks</span><span class="api-auth">🔒 auth</span></div>
+          <div class="api-row"><span class="api-method del">DEL</span><span class="api-path">/api/v1/users/me/bookmarks/:id</span><span class="api-auth">🔒 auth</span></div>
+          <div class="api-row"><span class="api-method get">GET</span><span class="api-path">/api/v1/users/me/history</span><span class="api-auth">🔒 auth</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/auth/logout</span><span class="api-auth">🔒 auth</span></div>
+        </div>
+
+        <!-- AUTH doc -->
+        <div class="screen-doc" id="doc-auth">
+          <div class="sdoc-title">Auth — Login / Register</div>
+          <div class="sdoc-desc">Clay-styled input fields, primary forest-green CTA, forgot-password flow. Rate-limited endpoints with CSRF protection on state-mutating calls.</div>
+          <div class="sdoc-flows">
+            <div class="sdoc-flow"><div class="flow-num">1</div><div class="flow-text"><strong>Login</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/auth/login</code> returns access + refresh tokens. Stored in secure HttpOnly cookies.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">2</div><div class="flow-text"><strong>Register</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/auth/register</code> with name, email, password. Shows success snackbar on completion.</div></div>
+            <div class="sdoc-flow"><div class="flow-num">3</div><div class="flow-text"><strong>Token refresh</strong> — <code style="font-family:var(--font-mono);color:var(--accent)">POST /api/auth/refresh</code> fires automatically when access token expires (401 interceptor in ApiClient).</div></div>
+          </div>
+          <div class="sdoc-api-tag">API calls on this screen</div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/auth/login</span><span class="api-desc" style="color:var(--accent);font-family:var(--font-mono);font-size:10px">rate limited</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/auth/register</span><span class="api-desc" style="color:var(--accent);font-family:var(--font-mono);font-size:10px">rate limited</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/auth/refresh</span><span class="api-desc">CSRF protected</span></div>
+          <div class="api-row"><span class="api-method post">POST</span><span class="api-path">/api/auth/password-reset/request</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── API Reference ── -->
+  <section class="section" id="api">
+    <div class="sec-header">
+      <div class="sec-tag">[ 04 — API ]</div>
+      <h2 class="sec-title">API Endpoint Reference</h2>
+      <p class="sec-desc">Node.js + Express backend running on port 5000. MongoDB + Redis. 🔒 = JWT required. ⚡ = rate limited.</p>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-title">Authentication — /api/auth</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Flags</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/login</td><td><span class="rate-badge">⚡ rate</span></td><td style="color:var(--text-muted)">Login, returns tokens</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/register</td><td><span class="rate-badge">⚡ rate</span></td><td style="color:var(--text-muted)">Create account</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/refresh</td><td><span class="lock-badge">CSRF</span></td><td style="color:var(--text-muted)">Refresh access token</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/logout</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Invalidate session</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/password-reset/request</td><td><span class="rate-badge">⚡ rate</span></td><td style="color:var(--text-muted)">Send reset email</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/auth/password-reset/confirm</td><td><span class="rate-badge">⚡ rate</span></td><td style="color:var(--text-muted)">Set new password</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-title">Users — /api/v1/users</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Flags</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Current user profile</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me/bookmarks</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">List bookmarks</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me/bookmarks</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Create bookmark</td></tr>
+          <tr><td><span class="api-method del">DEL</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me/bookmarks/:id</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Delete bookmark</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me/history</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Reading history</td></tr>
+          <tr><td><span class="api-method post">POST</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/users/me/history</td><td><span class="lock-badge">🔒 auth</span></td><td style="color:var(--text-muted)">Add history entry</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-title">Bible Content — /api/v1/bibles</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/bibles/:versionId/books</td><td style="color:var(--text-muted)">List all books for a version</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/bibles/:versionId/books/:bookId/chapters</td><td style="color:var(--text-muted)">List chapters</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/bibles/:versionId/books/:bookId/chapters/:ch</td><td style="color:var(--text-muted)">Get chapter content</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/scripture/chapter</td><td style="color:var(--text-muted)">Direct scripture fetch</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/v1/search/verses?q=</td><td style="color:var(--text-muted)">Search verses</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-title">Audio — /api/audio</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/audio/songs/:language</td><td style="color:var(--text-muted)">List songs by language</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/audio/search?q=</td><td style="color:var(--text-muted)">Search songs</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/audio/url/:videoId</td><td style="color:var(--text-muted)">Get stream URL for video</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/api/audio/stream/:videoId</td><td style="color:var(--text-muted)">Proxy stream audio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <div class="api-group-title">Health</div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/health</td><td style="color:var(--text-muted)">DB + Redis status, uptime</td></tr>
+          <tr><td><span class="api-method get">GET</span></td><td style="font-family:var(--font-mono);color:var(--text)">/ready</td><td style="color:var(--text-muted)">Readiness probe (503 if DB not ready)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <div class="footer-left">Bible App · Clay UI v1.0 · Figma: <a href="https://www.figma.com/design/Z0k5fIWxeA3CVIPPs3HU4J" style="color:var(--accent);text-decoration:none">Z0k5fIWxeA3CVIPPs3HU4J</a></div>
+    <div class="footer-right">
+      <span class="footer-link">Flutter Web</span>
+      <span class="footer-link">Node.js 5000</span>
+      <span class="footer-link">MongoDB + Redis</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Screen + doc switcher
+  const screens = ['home','bible','music','profile','auth'];
+
+  function switchScreen(name, navIdx) {
+    screens.forEach(s => {
+      const el = document.getElementById('phone-'+s);
+      if (el) el.classList.toggle('active', s === name);
+    });
+    // sync tab buttons
+    document.querySelectorAll('.proto-tab').forEach((btn, i) => {
+      const map = ['home','bible','music','profile','auth'];
+      btn.classList.toggle('active', map[i] === name);
+    });
+    switchDoc(name);
+  }
+
+  function switchDoc(name) {
+    // show phone screen
+    screens.forEach(s => {
+      const el = document.getElementById('phone-'+s);
+      if (el) el.classList.toggle('active', s === name);
+    });
+    // show doc
+    document.querySelectorAll('.screen-doc').forEach(d => {
+      d.classList.toggle('active', d.id === 'doc-'+name);
+    });
+    // sync tab buttons
+    document.querySelectorAll('.proto-tab').forEach(btn => {
+      const map = ['home','bible','music','profile','auth'];
+      const idx = Array.from(btn.parentNode.children).indexOf(btn);
+      btn.classList.toggle('active', map[idx] === name);
+    });
+  }
+
+  // Entrance animation on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.style.opacity = '1';
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.hstat,.token-card,.comp-card,.api-group').forEach(el => {
+    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>

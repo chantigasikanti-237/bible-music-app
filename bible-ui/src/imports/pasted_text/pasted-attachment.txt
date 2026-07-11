@@ -1,0 +1,373 @@
+Act as a Senior Product Designer and Design Systems Architect.
+
+We are NOT creating a new app design.
+We are evolving and redesigning the EXISTING Figma project into a scalable multilingual product design system.
+
+Project:
+“BIBLE app UI/UX”
+
+IMPORTANT:
+Do NOT create a separate project or disconnected redesign.
+Work inside the same existing design direction and evolve it professionally.
+
+--------------------------------------------------
+PRODUCT CONTEXT
+--------------------------------------------------
+
+This is a Flutter Material 3 Bible + Christian Songs application.
+
+Main Sections:
+- Home
+- Bible
+- Song Book (lyrics reading)
+- Songs (audio listening)
+- Profile
+
+The app supports:
+- Bible reading
+- Offline Bible/audio
+- Christian audio songs
+- Song lyrics reading
+- Bookmarks
+- Saved verse folders
+- Playlists
+- Downloads
+- Authentication
+- Language switching
+
+--------------------------------------------------
+CRITICAL PRODUCT REQUIREMENT
+--------------------------------------------------
+
+This app is multilingual-first.
+
+The UI must support:
+- English
+- Telugu
+- Hindi
+- Tamil
+- Malayalam
+- Kannada
+- Marathi
+- Bengali
+- Gujarati
+- Punjabi
+- Odia
+- Additional Indian languages later
+
+Typography, spacing, buttons, navigation, cards, and layouts must scale properly for multiple Indian scripts.
+
+Prioritize:
+- readability
+- line height
+- accessibility
+- text expansion
+- long labels
+- multilingual responsiveness
+
+--------------------------------------------------
+DESIGN DIRECTION
+--------------------------------------------------
+
+The app should feel:
+- peaceful
+- devotional
+- modern
+- spiritual
+- premium
+- trustworthy
+- readable
+- immersive
+
+Avoid:
+- flashy gradients
+- neon UI
+- gaming style
+- social media aesthetics
+- overdecorated religious visuals
+
+The app should feel like:
+“A multilingual digital sanctuary for scripture and worship.”
+
+--------------------------------------------------
+VISUAL STYLE
+--------------------------------------------------
+
+Use this devotional color system:
+
+Primary:
+Sacred Pine → #163A2D
+
+Secondary:
+Olive Sage → #6C8B74
+
+Background:
+Scripture Cream → #F6F1E7
+
+Accent:
+Antique Gold → #B89B5E
+
+Optional Accent:
+Dawn Bronze → #A66A4C
+
+Dark Mode:
+Midnight Green → #0B1814
+Dark Surface → #13231D
+
+Interactive Accent:
+Muted Sky Blue → #5B8DEF
+
+--------------------------------------------------
+MAIN TASK
+--------------------------------------------------
+
+Convert the existing UI into a scalable design system architecture.
+
+Do NOT redesign randomly.
+Systemize and evolve the current product.
+
+Create and organize these pages INSIDE THE SAME FIGMA PROJECT:
+
+01 — Foundations
+02 — Components
+03 — Navigation
+04 — Mobile Screens
+05 — Tablet Screens
+06 — States
+07 — Prototypes
+08 — Archive
+
+Move old experimental layouts into Archive instead of deleting them.
+
+--------------------------------------------------
+01 — FOUNDATIONS
+--------------------------------------------------
+
+Create:
+- Color tokens
+- Typography system
+- Spacing system
+- Radius system
+- Elevation/shadow system
+- Motion rules
+- Iconography rules
+
+Typography must support multilingual reading comfortably.
+
+Create text styles for:
+- Display
+- Title
+- Subtitle
+- Body
+- Caption
+- Button
+
+Use readable line heights for Telugu, Hindi, Tamil, Malayalam, and other Indian scripts.
+
+Spacing system:
+4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 48
+
+Radius:
+8 / 12 / 16 / 24
+
+Only soft devotional shadows.
+
+--------------------------------------------------
+02 — COMPONENTS
+--------------------------------------------------
+
+Convert all repeated UI into reusable Figma components.
+
+Use:
+- Auto Layout
+- Variants
+- Component Properties
+- Constraints
+
+Create reusable components for:
+- Buttons
+- Verse cards
+- Song cards
+- Playlist cards
+- Search bars
+- Inputs
+- Chips
+- Bottom sheets
+- Mini player
+- Audio controls
+- Download rows
+- Navigation items
+- Section headers
+
+Create states for:
+- default
+- pressed
+- disabled
+- loading
+- active
+- selected
+- bookmarked
+- highlighted
+- playing
+- offline
+
+--------------------------------------------------
+03 — NAVIGATION
+--------------------------------------------------
+
+Redesign and evolve the EXISTING bottom navigation.
+
+IMPORTANT:
+Keep the SAME icon meanings:
+- Home
+- Bible
+- Songs
+- Profile
+
+Navigation style MUST match this direction:
+- floating capsule navigation
+- soft devotional elevation
+- rounded active pill
+- calm spacing
+- premium minimal feel
+
+Active tab:
+- rounded devotional pill
+- subtle Sacred Pine background
+- icon container
+- visible label
+- gentle selection state
+
+Inactive tabs:
+- icon only
+- muted olive-gray
+- no underline
+- no heavy highlight
+
+Do NOT use aggressive blue active bars.
+
+Navigation should feel:
+- floating
+- soft
+- spiritual
+- modern
+
+Songs Book should NOT appear in bottom navigation on mobile.
+
+Instead:
+- Songs Book uses hidden gesture panel from left edge
+- Add small discoverable header shortcut
+
+Tablet:
+- Use side rail navigation
+- Persistent Songs Book panel
+- Split-pane layouts
+
+--------------------------------------------------
+04 — MOBILE SCREENS
+--------------------------------------------------
+
+Rebuild existing screens using reusable components.
+
+Create polished scalable versions of:
+- Home
+- Bible Book List
+- Chapter Grid
+- Bible Reader
+- Verse Actions
+- Bible Settings
+- Downloads Manager
+- Song Book
+- Lyrics Reader
+- Songs Library
+- Playlist Detail
+- Mini Player
+- Full Player
+- Profile
+- Login
+- Register
+- Forgot Password
+- OTP Reset
+- Bookmarked Verses
+- Favorite Songs
+
+Prioritize:
+- reading comfort
+- offline confidence
+- multilingual support
+- devotional atmosphere
+
+--------------------------------------------------
+05 — TABLET SCREENS
+--------------------------------------------------
+
+Do NOT stretch mobile layouts.
+
+Use:
+- side navigation
+- persistent panels
+- dual-pane layouts
+- split reading/player experiences
+
+Examples:
+Bible:
+Left = books/chapters
+Right = reader
+
+Songs:
+Left = playlists
+Right = player
+
+Song Book:
+Left = song list
+Right = lyrics
+
+--------------------------------------------------
+06 — STATES
+--------------------------------------------------
+
+Create dedicated UI states for:
+- loading
+- empty
+- error
+- offline
+- downloaded
+- downloading
+- selected
+- highlighted
+- bookmarked
+- playing
+- guest user
+- logged-in user
+
+States should remain calm, readable, and accessible.
+
+--------------------------------------------------
+07 — PROTOTYPES
+--------------------------------------------------
+
+Create interactive prototype journeys for:
+- Bible reading + bookmarking
+- Moving verse to folder
+- Offline Bible download
+- Song search + lyrics reading
+- Play song + download + playlist
+- Login/register/OTP reset
+- Songs Book gesture panel
+
+Use smooth calm motion:
+- 200–300ms
+- easeInOut
+- subtle transitions only
+
+--------------------------------------------------
+FINAL GOAL
+--------------------------------------------------
+
+Transform the existing Bible App UI into:
+- a scalable multilingual design system
+- a production-ready Flutter frontend architecture
+- a premium devotional product ecosystem
+
+The final product should feel:
+“peaceful, immersive, spiritual, multilingual, modern, and trustworthy.”

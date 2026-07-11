@@ -1,0 +1,47 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    image: chantigasikanti/bible-backend:latest
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/bible_app
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - JWT_SECRET=replace_with_a_32_plus_character_secret
+      - JWT_ISSUER=bible-backend
+      - JWT_AUDIENCE=bible-app
+      - JWT_ACCESS_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=30d
+      - BCRYPT_SALT_ROUNDS=12
+      - CORS_ORIGIN=http://localhost:3000
+      - YOUTUBE_API_KEY=replace_with_youtube_key
+      - YOUVERSION_APP_KEY=replace_with_youversion_key
+    depends_on:
+      - mongodb
+      - redis
+
+  frontend:
+    image: chantigasikanti/bible-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
