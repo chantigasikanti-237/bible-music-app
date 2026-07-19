@@ -3,8 +3,10 @@ import { useParams, useNavigate, useLocation } from 'react-router';
 import { Volume2, VolumeX, SlidersHorizontal, Minus, Plus, ChevronLeft, ChevronRight, Copy, Share2, Bookmark, BookmarkCheck, NotebookPen, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageContainer, AppBar } from '../components/BibleSystem';
-import { getBibleVersionId, setBibleVersionId, apiFetch, getToken } from '../lib/api';
+import { getBibleVersionId, setBibleVersionId, getToken } from '../lib/api';
 import { getChapterOffline, getAudioBlobUrlOffline, saveChapterOffline } from '../lib/offlineStore';
+import { addBookmarkOffline, listBookmarkedVerseNumbersOffline } from '../lib/offlineBookmarks';
+import { syncBookmarks } from '../lib/bookmarkSync';
 
 interface Verse {
   number: number;
@@ -101,24 +103,11 @@ export function ReadingScreen() {
   // into this one, since verse numbers repeat across chapters.
   useEffect(() => {
     if (!book || !getToken()) { setSavedVerses({}); return; }
-    apiFetch<{ success: boolean; data: any[] }>('/api/v1/users/me/bookmarks?targetType=verse')
-      .then(res => {
-        if (!res.success || !Array.isArray(res.data)) return;
-        const matches: Record<number, 'saved'> = {};
-        res.data.forEach((b: any) => {
-          const ref = b.verseRef;
-          if (
-            ref &&
-            Number(ref.versionId) === versionId &&
-            String(ref.bookId || '').toUpperCase() === book.toUpperCase() &&
-            Number(ref.chapterNumber) === chapterNum
-          ) {
-            matches[Number(ref.verseNumber)] = 'saved';
-          }
-        });
-        setSavedVerses(matches);
-      })
-      .catch(() => {});
+    listBookmarkedVerseNumbersOffline(versionId, book, chapterNum).then((verseNumbers) => {
+      const matches: Record<number, 'saved'> = {};
+      verseNumbers.forEach((n) => { matches[n] = 'saved'; });
+      setSavedVerses(matches);
+    });
   }, [book, chapterNum, versionId]);
 
   // Jumping here from a parsed reference like "genesis 7:16" passes the
@@ -264,29 +253,31 @@ export function ReadingScreen() {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   };
 
+  // Saved to IndexedDB first, so this always succeeds instantly whether or
+  // not there's a network - syncBookmarks() pushes it to the account
+  // whenever one is actually available, in the background.
   const saveVerse = async (verse: Verse, note?: string) => {
     if (!getToken()) {
       setSavedVerses(s => ({ ...s, [verse.number]: 'noauth' as never }));
       setTimeout(() => setSavedVerses(s => ({ ...s, [verse.number]: 'idle' })), 3000);
       return;
     }
+    if (!book) return;
     const key = verse.number;
     setSavedVerses(s => ({ ...s, [key]: 'saving' }));
     try {
-      await apiFetch('/api/v1/users/me/bookmarks', {
-        method: 'POST',
-        body: JSON.stringify({
-          targetType: 'verse',
-          bibleId: versionId,
-          passageId: `${book?.toUpperCase()}.${chapter}`,
-          verseNumber: verse.number,
-          text: verse.text,
-          bookName,
-          languageCode: versionInfo.lang,
-          ...(note ? { note: note.trim() } : {}),
-        }),
+      await addBookmarkOffline({
+        versionId,
+        bookId: book,
+        chapterNumber: Number(chapter),
+        verseNumber: verse.number,
+        text: verse.text,
+        bookName,
+        languageCode: versionInfo.lang,
+        note,
       });
       setSavedVerses(s => ({ ...s, [key]: 'saved' }));
+      syncBookmarks();
     } catch {
       setSavedVerses(s => ({ ...s, [key]: 'error' }));
       setTimeout(() => setSavedVerses(s => ({ ...s, [key]: 'idle' })), 2000);

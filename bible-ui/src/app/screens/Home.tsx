@@ -7,6 +7,7 @@ import { BIBLE_VERSIONS } from './BibleLibrary';
 import { parseReference } from '../lib/bibleReference';
 import { listDownloadedSongs } from '../lib/offlineMusicStore';
 import { getHymnsLanguage } from '../lib/languagePreference';
+import { listBookmarksOffline } from '../lib/offlineBookmarks';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
@@ -165,7 +166,7 @@ interface HymnResult { songId: string; title: string; languageCode: string; titl
 interface MusicSong { videoId: string; title: string; artist: string; image: string; language: string; isLongMix: boolean; }
 interface HymnFavorite { _id: string; songId: string; title: string; languageCode: string; }
 interface VerseBookmark {
-  _id: string; bookId: string; bookName: string; chapterNumber: number; verseNumber: number;
+  localId: string; bookId: string; bookName: string; chapterNumber: number; verseNumber: number;
   versionId: number; text: string; note: string | null;
 }
 
@@ -258,25 +259,21 @@ export function Home() {
         })));
       })
       .catch(() => {});
-    apiFetch<{ success: boolean; data: any[] }>('/api/v1/users/me/bookmarks?targetType=verse')
-      .then(res => {
-        if (!res.success || !Array.isArray(res.data)) return;
-        setVerseBookmarks(
-          res.data
-            .filter((b: any) => b.verseRef)
-            .map((b: any) => ({
-              _id: b._id,
-              bookId: b.verseRef.bookId,
-              bookName: b.verseRef.bookName || b.verseRef.bookId,
-              chapterNumber: b.verseRef.chapterNumber,
-              verseNumber: b.verseRef.verseNumber,
-              versionId: b.verseRef.versionId,
-              text: b.verseRef.text || '',
-              note: b.note || null,
-            }))
-        );
-      })
-      .catch(() => {});
+    // Local-first store, same source Bookmarks.tsx reads from - so a
+    // bookmark saved offline shows up here immediately too, not just after
+    // the next successful sync.
+    listBookmarksOffline().then((stored) => {
+      setVerseBookmarks(stored.map((b) => ({
+        localId: b.localId,
+        bookId: b.bookId,
+        bookName: b.bookName,
+        chapterNumber: b.chapterNumber,
+        verseNumber: b.verseNumber,
+        versionId: b.versionId,
+        text: b.text,
+        note: b.note,
+      })));
+    });
   }, [showSearch]);
 
   // The hymn catalog is too large (6,000+ entries) to fetch upfront like the
@@ -537,7 +534,7 @@ export function Home() {
                       <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Bookmarks &amp; Notes</p>
                       {bookmarkResults.map((bm) => (
                         <button
-                          key={bm._id}
+                          key={bm.localId}
                           onClick={() => {
                             closeSearch();
                             navigate(`/bible/${bm.bookId}/${bm.chapterNumber}`, { state: { verseNumber: bm.verseNumber } });

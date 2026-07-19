@@ -3,57 +3,38 @@ import { useNavigate } from 'react-router';
 import { Bookmark, Trash2, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageContainer, AppBar } from '../../components/BibleSystem';
-import { apiFetch, getToken } from '../../lib/api';
-
-interface VerseBookmark {
-  _id: string;
-  reference: string;
-  text: string;
-  bookId: string;
-  chapterNumber: number;
-  verseNumber: number;
-  createdAt: string;
-}
+import { getToken } from '../../lib/api';
+import { listBookmarksOffline, removeBookmarkOffline, StoredBookmark } from '../../lib/offlineBookmarks';
+import { syncBookmarks } from '../../lib/bookmarkSync';
 
 export function Bookmarks() {
   const navigate = useNavigate();
-  const [bookmarks, setBookmarks] = useState<VerseBookmark[]>([]);
+  const [bookmarks, setBookmarks] = useState<StoredBookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  const loadFromLocal = () => listBookmarksOffline().then(setBookmarks);
+
   useEffect(() => {
     if (!getToken()) { navigate('/login'); return; }
-    apiFetch<{ success: boolean; data: any[] }>('/api/v1/users/me/bookmarks?targetType=verse')
-      .then(res => {
-        if (res.success && Array.isArray(res.data)) {
-          setBookmarks(res.data.map((b: any) => ({
-            _id: b._id,
-            reference: b.verseRef?.reference || b.reference || '—',
-            text: b.verseRef?.text || b.text || '',
-            bookId: b.verseRef?.bookId || '',
-            chapterNumber: b.verseRef?.chapterNumber || 0,
-            verseNumber: b.verseRef?.verseNumber || 0,
-            createdAt: b.createdAt,
-          })));
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    // Local first, so the list appears instantly (and works offline) - then
+    // pull anything from the account this device doesn't have yet.
+    loadFromLocal().finally(() => setLoading(false));
+    syncBookmarks().then(loadFromLocal);
   }, []);
 
-  const handleDelete = async (id: string) => {
-    setDeleting(id);
+  const handleDelete = async (localId: string) => {
+    setDeleting(localId);
     try {
-      await apiFetch(`/api/v1/users/me/bookmarks/${id}`, { method: 'DELETE' });
-      setBookmarks(prev => prev.filter(b => b._id !== id));
-    } catch {
-      // ignore
+      await removeBookmarkOffline(localId);
+      setBookmarks(prev => prev.filter(b => b.localId !== localId));
+      syncBookmarks();
     } finally {
       setDeleting(null);
     }
   };
 
-  const goToVerse = (bm: VerseBookmark) => {
+  const goToVerse = (bm: StoredBookmark) => {
     if (bm.bookId && bm.chapterNumber) {
       navigate(`/bible/${bm.bookId}/${bm.chapterNumber}`);
     }
@@ -94,7 +75,7 @@ export function Bookmarks() {
               <AnimatePresence>
                 {bookmarks.map((bm, index) => (
                   <motion.div
-                    key={bm._id}
+                    key={bm.localId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -40 }}
@@ -111,8 +92,15 @@ export function Bookmarks() {
                           <BookOpen size={16} className="text-accent" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-primary font-semibold font-sans text-sm mb-1">{bm.reference}</p>
+                          <p className="text-primary font-semibold font-sans text-sm mb-1">
+                            {bm.bookName} {bm.chapterNumber}:{bm.verseNumber}
+                          </p>
                           <p className="text-foreground font-serif text-sm leading-relaxed line-clamp-3">{bm.text}</p>
+                          {bm.note && (
+                            <p className="text-muted-foreground font-sans text-xs leading-relaxed mt-2 italic line-clamp-2">
+                              {bm.note}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </motion.button>
@@ -120,11 +108,11 @@ export function Bookmarks() {
                     <div className="px-4 pb-3 flex justify-end border-t border-border/50 pt-2">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(bm._id)}
-                        disabled={deleting === bm._id}
+                        onClick={() => handleDelete(bm.localId)}
+                        disabled={deleting === bm.localId}
                         className="flex items-center gap-1.5 text-destructive/70 hover:text-destructive font-sans text-xs font-medium transition-colors disabled:opacity-40"
                       >
-                        {deleting === bm._id ? (
+                        {deleting === bm.localId ? (
                           <span className="w-3 h-3 border border-destructive border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <Trash2 size={14} />
