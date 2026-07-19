@@ -1,0 +1,10 @@
+*
+!Dockerfile
+!bible-backend/
+!bible-backend/**
+!lib/config/
+!lib/config/**
+bible-backend/node_modules
+bible-backend/.env
+bible-backend/*.log
+bible-backend/audio
