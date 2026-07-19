@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-/// Full-screen WebView that hosts the React bible-ui.
-/// Requires `adb reverse tcp:3000 tcp:3000` so that the device's
-/// localhost:3000 tunnels to the dev PC's Vite server.
+/// Full-screen WebView that hosts the React bible-ui, served directly from
+/// the deployed backend (which also serves the built frontend — see
+/// bible-backend/app.js and the root Dockerfile) so the app works standalone
+/// on-device with no dev-machine tunnel required.
 class WebAppScreen extends StatefulWidget {
   const WebAppScreen({super.key});
 
@@ -38,7 +39,7 @@ class _WebAppScreenState extends State<WebAppScreen> {
       ));
     }
 
-    _controller.loadRequest(Uri.parse('http://localhost:3000'));
+    _controller.loadRequest(Uri.parse('https://bible-music-app-1.onrender.com'));
 
     if (kIsWeb) {
       _loading = false;

@@ -2,9 +2,13 @@
 !Dockerfile
 !bible-backend/
 !bible-backend/**
+!bible-ui/
+!bible-ui/**
 !lib/config/
 !lib/config/**
 bible-backend/node_modules
 bible-backend/.env
 bible-backend/*.log
 bible-backend/audio
+bible-ui/node_modules
+bible-ui/dist

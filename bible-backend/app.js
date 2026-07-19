@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const compression = require("compression");
 const cors = require("cors");
@@ -43,7 +44,20 @@ if (config.trustProxy) {
   app.set("trust proxy", 1);
 }
 
-app.use(helmet());
+app.use(
+  helmet({
+    // Default img-src ('self' + data:) would silently block every YouTube
+    // song/hymn thumbnail now that the frontend's HTML is served from here
+    // too and inherits this CSP - those come straight from YouTube's
+    // thumbnail CDN, not our own origin.
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https://i.ytimg.com", "https://*.ggpht.com", "https://*.googleusercontent.com"],
+      },
+    },
+  })
+);
 app.use(
   cors({
     origin: corsOrigin,
@@ -98,6 +112,19 @@ app.use("/api/history", historyRoutes);
 app.use("/api/songs", songRoutes);
 app.use("/api/audio", audioRoutes);
 app.use("/api/v1", v1Routes);
+
+// Serves the built bible-ui SPA (copied into public/ during the Docker
+// build - see root Dockerfile) so the Flutter app's WebView, and any
+// browser, can load the whole app from this one deployed origin,
+// same-origin with /api, instead of needing a separate frontend host or a
+// dev-machine tunnel. Static files first so real assets (JS/CSS/images)
+// are served directly; anything else non-API falls through to index.html
+// for React Router's client-side routing.
+const staticDir = path.join(__dirname, "public");
+app.use(express.static(staticDir));
+app.get(/^\/(?!api\/).*/, (_req, res) => {
+  res.sendFile(path.join(staticDir, "index.html"));
+});
 
 app.use(notFound);
 app.use(errorHandler);
