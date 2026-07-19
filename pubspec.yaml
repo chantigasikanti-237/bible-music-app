@@ -36,6 +36,7 @@ dependencies:
   audio_service: ^0.18.18
   webview_flutter: ^4.4.4
   webview_flutter_web: ^0.2.3+4
+  webview_flutter_android: ^3.16.0
 
 dependency_overrides:
   # webview_flutter_android 2.x uses the removed v1 Flutter embedding and lacks

@@ -298,7 +298,12 @@ export function Songs() {
       audioRef.current = audio;
       await audio.play();
       setIsPlaying(true);
-    } catch {
+    } catch (err) {
+      // Was a bare catch with nothing surfaced anywhere - "stuck on play
+      // button" had no way to tell whether the URL fetch failed, the audio
+      // element failed to load, or .play() itself was rejected (e.g.
+      // Android WebView's autoplay-gesture policy).
+      console.error('[Songs] _loadAndPlay failed for', song.videoId, err);
       setIsPlaying(false);
     } finally {
       setLoadingId(null);
@@ -311,7 +316,9 @@ export function Songs() {
     if (playerSong?.videoId === song.videoId) {
       setPlayerExpanded(true);
       if (audioRef.current && !isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(err => {
+          console.error('[Songs] resume play() failed for', song.videoId, err);
+        });
       }
       return;
     }
@@ -330,7 +337,9 @@ export function Songs() {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(err => {
+        console.error('[Songs] togglePlay play() failed', err);
+      });
     }
   }, [isPlaying]);
 
