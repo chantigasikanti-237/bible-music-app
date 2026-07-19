@@ -667,41 +667,62 @@ const createAudioService = ({ httpClient = axios } = {}) => {
       req.on("close", () => currentReq?.destroy());
 
       const fetchAndPipe = (url, redirectsLeft) => {
-        const protocol = url.startsWith("https") ? https : http;
-        const getOpts = streamProxyAgent
-          ? { headers: proxyHeaders, agent: streamProxyAgent }
-          : { headers: proxyHeaders };
-        currentReq = protocol.get(url, getOpts, (audioRes) => {
-          const status = audioRes.statusCode || 0;
-          if ([301, 302, 303, 307, 308].includes(status) && audioRes.headers.location && redirectsLeft > 0) {
-            audioRes.resume(); // discard the empty redirect body
-            fetchAndPipe(audioRes.headers.location, redirectsLeft - 1);
-            return;
-          }
+        // http.get/https.get throw *synchronously* on a malformed URL rather
+        // than emitting an 'error' event - uncaught, that's fatal for the
+        // whole process (server.js's uncaughtException handler calls
+        // process.exit(1)), not just this request. A bad redirect Location
+        // header (relative, or otherwise malformed) hit exactly this and
+        // took the entire backend down for every user, not just this song.
+        try {
+          const protocol = url.startsWith("https") ? https : http;
+          const getOpts = streamProxyAgent
+            ? { headers: proxyHeaders, agent: streamProxyAgent }
+            : { headers: proxyHeaders };
+          currentReq = protocol.get(url, getOpts, (audioRes) => {
+            const status = audioRes.statusCode || 0;
+            if ([301, 302, 303, 307, 308].includes(status) && audioRes.headers.location && redirectsLeft > 0) {
+              audioRes.resume(); // discard the empty redirect body
+              // Location is allowed to be relative per HTTP spec - resolve
+              // it against the URL that issued the redirect.
+              let nextUrl;
+              try {
+                nextUrl = new URL(audioRes.headers.location, url).href;
+              } catch (err) {
+                console.error(`[audioService] Malformed redirect Location for ${videoId}:`, err.message);
+                if (!res.headersSent) res.status(502).end();
+                return;
+              }
+              fetchAndPipe(nextUrl, redirectsLeft - 1);
+              return;
+            }
 
-          // Forward the real Content-Type, Content-Length, Content-Range.
-          const ct = audioRes.headers["content-type"];
-          res.setHeader("Content-Type", ct || "audio/webm");
-          if (audioRes.headers["content-length"]) {
-            res.setHeader("Content-Length", audioRes.headers["content-length"]);
-          }
-          if (audioRes.headers["content-range"]) {
-            res.setHeader("Content-Range", audioRes.headers["content-range"]);
-          }
-          res.status(status || 200);
-          audioRes.pipe(res);
-          audioRes.on("error", (err) => {
-            console.error(`[audioService] Proxy stream error for ${videoId}:`, err.message);
+            // Forward the real Content-Type, Content-Length, Content-Range.
+            const ct = audioRes.headers["content-type"];
+            res.setHeader("Content-Type", ct || "audio/webm");
+            if (audioRes.headers["content-length"]) {
+              res.setHeader("Content-Length", audioRes.headers["content-length"]);
+            }
+            if (audioRes.headers["content-range"]) {
+              res.setHeader("Content-Range", audioRes.headers["content-range"]);
+            }
+            res.status(status || 200);
+            audioRes.pipe(res);
+            audioRes.on("error", (err) => {
+              console.error(`[audioService] Proxy stream error for ${videoId}:`, err.message);
+              if (!res.headersSent) res.status(502).end();
+              else res.destroy();
+            });
+          });
+
+          currentReq.on("error", (err) => {
+            console.error(`[audioService] HTTP request error for ${videoId}:`, err.message);
             if (!res.headersSent) res.status(502).end();
             else res.destroy();
           });
-        });
-
-        currentReq.on("error", (err) => {
-          console.error(`[audioService] HTTP request error for ${videoId}:`, err.message);
+        } catch (err) {
+          console.error(`[audioService] Synchronous fetch error for ${videoId}:`, err.message);
           if (!res.headersSent) res.status(502).end();
-          else res.destroy();
-        });
+        }
       };
 
       fetchAndPipe(audioUrl, MAX_REDIRECTS);
