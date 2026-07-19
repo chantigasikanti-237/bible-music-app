@@ -215,7 +215,7 @@ export function BottomNav() {
           transition={{ type: 'spring', damping: 28, stiffness: 280 }}
           style={{ pointerEvents: playerOpen ? 'none' : undefined }}
         >
-          <nav className="max-w-md mx-auto bg-[#F6F1E7] dark:bg-card border border-[#163A2D]/10 shadow-[0_8px_32px_rgba(22,58,45,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl rounded-[2rem] px-2 py-2 pointer-events-auto flex items-center justify-around">
+          <nav className="max-w-md mx-auto bg-[#F6F1E7] dark:bg-card border border-[var(--primary)]/10 shadow-[0_8px_32px_rgba(22,58,45,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl rounded-[2rem] px-2 py-2 pointer-events-auto flex items-center justify-around">
             {mobileNavItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -227,7 +227,7 @@ export function BottomNav() {
                 >
                   {isActive ? (
                     <motion.div layoutId="activeChip"
-                      className="w-12 h-10 rounded-xl bg-[#163A2D] flex items-center justify-center shadow-md shadow-[#163A2D]/30"
+                      className="w-12 h-10 rounded-xl bg-[var(--primary)] flex items-center justify-center shadow-md shadow-[var(--primary)]/30"
                       initial={false} transition={{ type: 'spring', stiffness: 450, damping: 32 }}>
                       {item.id === 'bible' ? (
                         <AnimatedBibleIcon size={20} className="text-white" strokeWidth={1.8} isActive />
@@ -240,11 +240,11 @@ export function BottomNav() {
                   ) : (
                     <div className="w-12 h-10 flex items-center justify-center">
                       {item.id === 'bible' ? (
-                        <AnimatedBibleIcon size={22} className="text-[#6C8B74]" strokeWidth={1.6} isActive={false} />
+                        <AnimatedBibleIcon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} isActive={false} />
                       ) : item.id === 'songs' ? (
-                        <AnimatedMusicIcon size={22} className="text-[#6C8B74]" strokeWidth={1.6} isActive={false} />
+                        <AnimatedMusicIcon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} isActive={false} />
                       ) : (
-                        <item.Icon size={22} className="text-[#6C8B74]" strokeWidth={1.6} />
+                        <item.Icon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} />
                       )}
                     </div>
                   )}
@@ -253,7 +253,7 @@ export function BottomNav() {
                       <motion.span
                         initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 3 }} transition={{ duration: 0.18 }}
-                        className="text-[10px] font-semibold text-[#163A2D] mt-0.5 leading-none"
+                        className="text-[10px] font-semibold text-[var(--primary)] mt-0.5 leading-none"
                       >{item.label}</motion.span>
                     )}
                   </AnimatePresence>
@@ -265,7 +265,7 @@ export function BottomNav() {
       )}
 
       {/* ── Desktop / Tablet sidebar (hidden on mobile) ──────────── */}
-      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] border-r border-[#163A2D]/10 shadow-[2px_0_20px_rgba(22,58,45,0.07)]">
+      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] dark:bg-card border-r border-[var(--primary)]/10 shadow-[2px_0_20px_rgba(22,58,45,0.07)]">
 
         {/* Nav items — start from top, no branding */}
         <nav className="flex-1 px-2 pt-6 pb-4 space-y-1 overflow-y-auto">
@@ -277,8 +277,8 @@ export function BottomNav() {
                 onClick={() => { setActiveTab(item.id); navigate(item.path); }}
                 className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl transition-all outline-none ${
                   isActive
-                    ? 'bg-[#163A2D] text-white shadow-md shadow-[#163A2D]/20'
-                    : 'text-[#163A2D]/55 hover:bg-[#163A2D]/8 hover:text-[#163A2D]'
+                    ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20'
+                    : 'text-[var(--primary)]/55 hover:bg-[var(--primary)]/8 hover:text-[var(--primary)]'
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -304,9 +304,9 @@ export function BottomNav() {
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
               className="px-2 pb-4 flex-shrink-0"
             >
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-[#163A2D]/8">
-                <SoundwaveIcon size={18} className="text-[#163A2D] flex-shrink-0" paused={false} />
-                <span className="hidden xl:block text-[#163A2D] font-sans text-xs font-semibold truncate">Now Playing</span>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-[var(--primary)]/8">
+                <SoundwaveIcon size={18} className="text-[var(--primary)] flex-shrink-0" paused={false} />
+                <span className="hidden xl:block text-[var(--primary)] font-sans text-xs font-semibold truncate">Now Playing</span>
               </div>
             </motion.div>
           )}

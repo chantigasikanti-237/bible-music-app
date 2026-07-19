@@ -585,10 +585,10 @@ export function Songs() {
                         }
                         <div className="absolute bottom-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow">
                           {isCardLoading(song.videoId)
-                            ? <div className="w-3.5 h-3.5 border-2 border-[#163A2D] border-t-transparent rounded-full animate-spin" />
+                            ? <div className="w-3.5 h-3.5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
                             : isCardPlaying(song.videoId)
-                              ? <Pause size={12} className="text-[#163A2D]" fill="#163A2D" />
-                              : <Play size={12} className="text-[#163A2D] ml-0.5" fill="#163A2D" />
+                              ? <Pause size={12} className="text-[var(--primary)]" fill="var(--primary)" />
+                              : <Play size={12} className="text-[var(--primary)] ml-0.5" fill="var(--primary)" />
                           }
                         </div>
                       </div>
@@ -640,7 +640,7 @@ export function Songs() {
                   {isActive && (
                     <motion.div
                       layoutId="tabPill"
-                      className="absolute inset-0 bg-[#163A2D] rounded-full shadow-md"
+                      className="absolute inset-0 bg-[var(--primary)] rounded-full shadow-md"
                       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -731,7 +731,7 @@ export function Songs() {
                           key={key}
                           onClick={() => setAssetsView(key)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold transition-colors ${
-                            assetsView === key ? 'bg-[#163A2D] text-white' : 'bg-muted text-muted-foreground'
+                            assetsView === key ? 'bg-[var(--primary)] text-white' : 'bg-muted text-muted-foreground'
                           }`}
                         >
                           <Icon size={12} /> {label}
@@ -748,7 +748,7 @@ export function Songs() {
                           <p className="text-foreground font-sans text-sm font-semibold">No saved songs yet</p>
                           <p className="text-muted-foreground font-sans text-xs text-center px-6">Tap the ♥ on any trending song to save it here</p>
                           <motion.button whileTap={{ scale: 0.96 }} onClick={() => setActiveTab('trending')}
-                            className="mt-2 px-5 py-2.5 bg-[#163A2D] text-white rounded-full font-sans text-sm font-semibold">
+                            className="mt-2 px-5 py-2.5 bg-[var(--primary)] text-white rounded-full font-sans text-sm font-semibold">
                             Browse Music
                           </motion.button>
                         </div>
@@ -808,8 +808,8 @@ export function Songs() {
                     {assetsView === 'playlists' && (
                       <div>
                         <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowCreatePlaylist(true)}
-                          className="w-full flex items-center justify-center gap-2.5 py-3.5 mb-4 rounded-2xl text-white font-sans text-sm font-bold shadow-lg shadow-[#163A2D]/30 transition-transform"
-                          style={{ background: 'linear-gradient(135deg, #1a4d2e 0%, #163A2D 100%)' }}>
+                          className="w-full flex items-center justify-center gap-2.5 py-3.5 mb-4 rounded-2xl text-white font-sans text-sm font-bold shadow-lg shadow-[var(--primary)]/30 transition-transform"
+                          style={{ background: 'linear-gradient(135deg, #1a4d2e 0%, var(--primary) 100%)' }}>
                           <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center">
                             <Plus size={14} />
                           </div>
@@ -1167,7 +1167,7 @@ function SongCard({
           ? <img src={song.image} alt={song.title} className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center"><Music size={20} className="text-muted-foreground" /></div>
         }
-        <div className="absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full bg-[#163A2D]/90 flex items-center justify-center shadow-md">
+        <div className="absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full bg-[var(--primary)]/90 flex items-center justify-center shadow-md">
           {isLoading
             ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             : isPlaying
@@ -1242,7 +1242,7 @@ function SongRow({
           <Heart size={16} className={isFav ? 'text-red-400 fill-red-400' : 'text-muted-foreground'} />
         </motion.button>
         <motion.button whileTap={{ scale: 0.88 }} onClick={onPlay}
-          className="w-9 h-9 rounded-full bg-[#163A2D] flex items-center justify-center shadow-md">
+          className="w-9 h-9 rounded-full bg-[var(--primary)] flex items-center justify-center shadow-md">
           {isLoading
             ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             : isPlaying

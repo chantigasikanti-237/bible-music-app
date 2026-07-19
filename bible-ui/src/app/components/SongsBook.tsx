@@ -231,11 +231,11 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                 className="flex flex-col h-full"
               >
                 {/* Header */}
-                <div className="pt-safe pb-4 px-4 bg-[#F6F1E7]/90 backdrop-blur-2xl border-b border-[#163A2D]/5 flex items-center justify-between z-20 sticky top-0">
+                <div className="pt-safe pb-4 px-4 bg-[#F6F1E7]/90 backdrop-blur-2xl border-b border-[var(--primary)]/5 flex items-center justify-between z-20 sticky top-0">
                   <button onClick={onClose} className="p-2 -ml-2 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors">
-                    <ChevronLeft size={28} className="text-[#163A2D]" />
+                    <ChevronLeft size={28} className="text-[var(--primary)]" />
                   </button>
-                  <h2 className="font-serif text-xl font-medium text-[#163A2D]">Hymns</h2>
+                  <h2 className="font-serif text-xl font-medium text-[var(--primary)]">Hymns</h2>
 
                   {/* Language selector — hidden while Universal Language is on */}
                   {!universalOn && (
@@ -290,7 +290,7 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                       placeholder="Search songs..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full bg-white border border-[#163A2D]/10 shadow-sm rounded-2xl py-3.5 pl-12 pr-4 text-[#2c2c2c] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B8DEF]/30 transition-shadow"
+                      className="w-full bg-white border border-[var(--primary)]/10 shadow-sm rounded-2xl py-3.5 pl-12 pr-4 text-[#2c2c2c] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B8DEF]/30 transition-shadow"
                     />
                   </div>
 
@@ -314,9 +314,9 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                       transition={{ delay: i * 0.03 }}
                       whileTap={{ scale: 0.99 }}
                       onClick={() => setSelectedSong(song)}
-                      className="w-full bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-sm border border-[#163A2D]/5 text-left"
+                      className="w-full bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-sm border border-[var(--primary)]/5 text-left"
                     >
-                      <div className="w-12 h-12 rounded-full bg-[#163A2D]/5 flex items-center justify-center text-[#163A2D] font-serif font-bold text-lg shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-[var(--primary)]/5 flex items-center justify-center text-[var(--primary)] font-serif font-bold text-lg shrink-0">
                         {String(searchNumberOffset + i + 1).padStart(2, '0')}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -343,13 +343,13 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                 className="absolute inset-0 bg-[#F6F1E7] flex flex-col"
               >
                 {/* Detail header */}
-                <div className="pt-safe pb-4 px-4 bg-[#F6F1E7]/90 backdrop-blur-2xl border-b border-[#163A2D]/5 flex items-center justify-between z-20 sticky top-0">
+                <div className="pt-safe pb-4 px-4 bg-[#F6F1E7]/90 backdrop-blur-2xl border-b border-[var(--primary)]/5 flex items-center justify-between z-20 sticky top-0">
                   <button onClick={() => { setSelectedSong(null); setShowDotsMenu(false); }}
                     className="p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors">
-                    <ChevronLeft size={28} className="text-[#163A2D]" />
+                    <ChevronLeft size={28} className="text-[var(--primary)]" />
                   </button>
 
-                  <span className="font-serif text-lg font-medium text-[#163A2D] truncate max-w-[50%] text-center">
+                  <span className="font-serif text-lg font-medium text-[var(--primary)] truncate max-w-[50%] text-center">
                     {selectedSong.title}
                   </span>
 
@@ -394,7 +394,7 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                                 onClick={() => handleDownload(selectedSong)}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
                               >
-                                <Download size={16} className="text-[#163A2D]" />
+                                <Download size={16} className="text-[var(--primary)]" />
                                 Download
                               </button>
                             </motion.div>

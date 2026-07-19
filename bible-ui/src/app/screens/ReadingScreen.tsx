@@ -463,7 +463,7 @@ export function ReadingScreen() {
                     id={`verse-${item.number}`}
                     key={item.number}
                     className={`transition-colors select-none cursor-pointer rounded ${
-                      isSelected ? 'bg-[#163A2D]/10' : ''
+                      isSelected ? 'bg-[var(--primary)]/10' : ''
                     }`}
                     style={{
                       fontWeight: isSelected ? 500 : 400,
@@ -485,7 +485,7 @@ export function ReadingScreen() {
                     onTouchEnd={cancelLongPress}
                     onTouchMove={cancelLongPress}
                   >
-                    <sup className={`font-bold font-sans text-xs mr-1 ${isSelected ? 'text-[#163A2D]' : 'text-[#163A2D]/50'}`}>
+                    <sup className={`font-bold font-sans text-xs mr-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--primary)]/50'}`}>
                       {item.number}
                     </sup>
                     {item.text}{' '}
@@ -512,7 +512,7 @@ export function ReadingScreen() {
           disabled={chapterNum <= 1}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
             chapterNum > 1
-              ? 'bg-[#163A2D] text-white shadow-md shadow-[#163A2D]/30'
+              ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/30'
               : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
           }`}
         >
@@ -538,7 +538,7 @@ export function ReadingScreen() {
           disabled={chapterCount > 0 && chapterNum >= chapterCount}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
             chapterCount === 0 || chapterNum < chapterCount
-              ? 'bg-[#163A2D] text-white shadow-md shadow-[#163A2D]/30'
+              ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/30'
               : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
           }`}
         >
@@ -607,7 +607,7 @@ export function ReadingScreen() {
                       onClick={() => { setShowVersePicker(false); setShowBookList(false); navigate(`/bible/${b.id}`); }}
                       className={`w-full text-left px-5 py-3 font-sans text-base transition-colors ${
                         b.id === book
-                          ? 'text-[#163A2D] font-bold bg-[#163A2D]/8'
+                          ? 'text-[var(--primary)] font-bold bg-[var(--primary)]/8'
                           : 'text-foreground hover:bg-muted/50'
                       }`}
                     >
@@ -632,7 +632,7 @@ export function ReadingScreen() {
                             document.getElementById(`verse-${v.number}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           }, 300);
                         }}
-                        className="aspect-square rounded-xl flex items-center justify-center font-bold font-sans text-sm bg-muted text-foreground hover:bg-[#163A2D] hover:text-white transition-all"
+                        className="aspect-square rounded-xl flex items-center justify-center font-bold font-sans text-sm bg-muted text-foreground hover:bg-[var(--primary)] hover:text-white transition-all"
                       >
                         {v.number}
                       </motion.button>
@@ -749,13 +749,13 @@ export function ReadingScreen() {
                     onChange={e => setNoteText(e.target.value)}
                     placeholder="Write your note here…"
                     rows={3}
-                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2 text-sm font-sans text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#163A2D]/30 resize-none"
+                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2 text-sm font-sans text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 resize-none"
                   />
                   <div className="flex gap-2 mt-1.5">
                     <button
                       onClick={() => submitNote(verseMenu.verse)}
                       disabled={!noteText.trim() || noteSaving}
-                      className="flex items-center gap-1.5 bg-[#163A2D] text-white rounded-xl px-3 py-1.5 text-xs font-semibold font-sans disabled:opacity-50"
+                      className="flex items-center gap-1.5 bg-[var(--primary)] text-white rounded-xl px-3 py-1.5 text-xs font-semibold font-sans disabled:opacity-50"
                     >
                       <Check size={12} /> {noteSaving ? 'Saving…' : 'Save Note'}
                     </button>

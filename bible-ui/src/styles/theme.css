@@ -55,25 +55,25 @@
 }
 
 .dark {
-  --background: #0B1814; /* Midnight Green */
+  --background: #1A1A1A; /* Neutral charcoal, no green tint */
   --foreground: #F6F1E7; /* Scripture Cream */
-  --card: #13231D; /* Dark Surface */
+  --card: #242424; /* Dark Surface */
   --card-foreground: #F6F1E7;
-  --popover: #13231D;
+  --popover: #242424;
   --popover-foreground: #F6F1E7;
-  --primary: #6C8B74; /* Olive Sage for dark mode contrast */
-  --primary-foreground: #0B1814;
+  --primary: #B8B8B8; /* Light grey - replaces Olive Sage green */
+  --primary-foreground: #1A1A1A;
   --secondary: #B89B5E; /* Antique Gold */
-  --secondary-foreground: #0B1814;
-  --muted: #1e332a;
-  --muted-foreground: #6C8B74;
+  --secondary-foreground: #1A1A1A;
+  --muted: #2E2E2E;
+  --muted-foreground: #B8B8B8;
   --accent: #B89B5E;
-  --accent-foreground: #0B1814;
+  --accent-foreground: #1A1A1A;
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: rgba(246, 241, 231, 0.15);
   --input: rgba(246, 241, 231, 0.1);
-  --ring: #6C8B74;
+  --ring: #B8B8B8;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -83,12 +83,12 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: #2c2c2c;
   --sidebar-foreground: #e8e0d5;
-  --sidebar-primary: #2d6945;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #B8B8B8;
+  --sidebar-primary-foreground: #1A1A1A;
   --sidebar-accent: #3a3a3a;
   --sidebar-accent-foreground: #e8e0d5;
   --sidebar-border: rgba(232, 224, 213, 0.15);
-  --sidebar-ring: #2d6945;
+  --sidebar-ring: #B8B8B8;
 }
 
 @theme inline {

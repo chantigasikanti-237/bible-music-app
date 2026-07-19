@@ -30,6 +30,10 @@ const QUOTES = [
 
 const getTimeConfig = () => {
   const h = new Date().getHours();
+  // Note: accentColor/gradient here are a self-contained contrast system for
+  // this time-of-day hero card (dark accent on a light gradient, or vice
+  // versa) - independent of the app-wide light/dark theme toggle, so these
+  // intentionally stay fixed hex rather than theme `var(--primary)`.
   if (h >= 5 && h < 12) return {
     greeting: 'Good morning',
     subtitle: 'A peaceful start to your day in the Word.',
@@ -48,14 +52,16 @@ const getTimeConfig = () => {
     greeting: 'Good evening',
     subtitle: 'Wind down with God\'s Word tonight.',
     gradient: 'linear-gradient(160deg, #163A2D 0%, #0a1f14 55%, #1b4332 100%)',
-    accentColor: '#6EE7B7',
+    // Light accent on this dark gradient - grey instead of green, per the
+    // app's dark-theme color change.
+    accentColor: '#D1D1D1',
     isDark: true,
   };
   return {
     greeting: 'Good night',
     subtitle: 'Let the Word guide your rest.',
     gradient: 'linear-gradient(160deg, #0a1f14 0%, #030d08 60%, #051a10 100%)',
-    accentColor: '#6EE7B7',
+    accentColor: '#D1D1D1',
     isDark: true,
   };
 };
@@ -349,8 +355,8 @@ export function Home() {
 
   const tc = useMemo(getTimeConfig, []);
 
-  const textPrimary = 'text-[#163A2D]';
-  const textMuted = 'text-[#163A2D]/55';
+  const textPrimary = 'text-[var(--primary)]';
+  const textMuted = 'text-[var(--primary)]/55';
 
   const cardStyle = {
     background: '#ffffff',
@@ -412,7 +418,7 @@ export function Home() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Escape') closeSearch(); }}
                 placeholder="Search Bible books…"
-                className={`w-full bg-white border border-[#163A2D]/10 rounded-2xl pl-11 pr-11 py-3 font-sans text-sm ${textPrimary} placeholder:${textMuted} shadow-sm focus:outline-none focus:ring-2 focus:ring-[#163A2D]/20`}
+                className={`w-full bg-white border border-[var(--primary)]/10 rounded-2xl pl-11 pr-11 py-3 font-sans text-sm ${textPrimary} placeholder:${textMuted} shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20`}
               />
               <button
                 onClick={closeSearch}
@@ -422,7 +428,7 @@ export function Home() {
               </button>
 
               {searchQuery.trim() && (
-                <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-[#163A2D]/10 shadow-lg overflow-hidden z-20 max-h-[65vh] overflow-y-auto scrollbar-hide">
+                <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-[var(--primary)]/10 shadow-lg overflow-hidden z-20 max-h-[65vh] overflow-y-auto scrollbar-hide">
                   {!hasAnySearchResults && (
                     <p className={`px-4 py-3 text-sm ${textMuted}`}>No results for "{searchQuery}"</p>
                   )}
@@ -435,7 +441,7 @@ export function Home() {
                           state: parsedReference.verse ? { verseNumber: parsedReference.verse } : undefined,
                         });
                       }}
-                      className="w-full text-left px-4 py-3 font-sans text-sm hover:bg-[#163A2D]/8 transition-colors bg-[#163A2D]/5 border-b border-[#163A2D]/10"
+                      className="w-full text-left px-4 py-3 font-sans text-sm hover:bg-[var(--primary)]/8 transition-colors bg-[var(--primary)]/5 border-b border-[var(--primary)]/10"
                     >
                       <span className={`font-semibold ${textPrimary}`}>
                         {parsedReference.book.title} {parsedReference.chapter}
@@ -446,13 +452,13 @@ export function Home() {
                   )}
 
                   {searchResults.length > 0 && (
-                    <div className="border-b border-[#163A2D]/8">
+                    <div className="border-b border-[var(--primary)]/8">
                       <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Bible</p>
                       {searchResults.map((book) => (
                         <button
                           key={book.id}
                           onClick={() => { closeSearch(); navigate(`/bible/${book.id}`); }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors ${textPrimary}`}
                         >
                           {book.title}
                           <span className={`ml-2 text-xs ${textMuted}`}>{book.canon === 'OT' ? 'Old Testament' : 'New Testament'}</span>
@@ -462,7 +468,7 @@ export function Home() {
                   )}
 
                   {hymnResults.length > 0 && (
-                    <div className="border-b border-[#163A2D]/8">
+                    <div className="border-b border-[var(--primary)]/8">
                       <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Hymns</p>
                       {hymnResults.map((hymn) => (
                         <button
@@ -471,7 +477,7 @@ export function Home() {
                             closeSearch();
                             navigate('/hymns', { state: { openHymn: { songId: hymn.songId, title: hymn.title, languageCode: hymn.languageCode } } });
                           }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors truncate ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors truncate ${textPrimary}`}
                         >
                           {hymn.title}
                         </button>
@@ -480,13 +486,13 @@ export function Home() {
                   )}
 
                   {downloadedSongResults.length > 0 && (
-                    <div className="border-b border-[#163A2D]/8">
+                    <div className="border-b border-[var(--primary)]/8">
                       <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Downloaded Songs</p>
                       {downloadedSongResults.map((song) => (
                         <button
                           key={song.videoId}
                           onClick={() => { closeSearch(); navigate('/songs', { state: { openSong: song } }); }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors ${textPrimary}`}
                         >
                           <span className="truncate">{song.title}</span>
                           <span className={`ml-2 text-xs ${textMuted}`}>{song.artist}</span>
@@ -496,13 +502,13 @@ export function Home() {
                   )}
 
                   {(musicFavoriteResults.length > 0 || hymnFavoriteResults.length > 0) && (
-                    <div className="border-b border-[#163A2D]/8">
+                    <div className="border-b border-[var(--primary)]/8">
                       <p className={`px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider ${textMuted}`}>Favorites</p>
                       {musicFavoriteResults.map((song) => (
                         <button
                           key={song.videoId}
                           onClick={() => { closeSearch(); navigate('/songs', { state: { openSong: song } }); }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors ${textPrimary}`}
                         >
                           <span className="truncate">{song.title}</span>
                           <span className={`ml-2 text-xs ${textMuted}`}>{song.artist}</span>
@@ -515,7 +521,7 @@ export function Home() {
                             closeSearch();
                             navigate('/hymns', { state: { openHymn: { songId: fav.songId, title: fav.title, languageCode: fav.languageCode } } });
                           }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors truncate ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors truncate ${textPrimary}`}
                         >
                           {fav.title}
                           <span className={`ml-2 text-xs ${textMuted}`}>Hymn</span>
@@ -534,7 +540,7 @@ export function Home() {
                             closeSearch();
                             navigate(`/bible/${bm.bookId}/${bm.chapterNumber}`, { state: { verseNumber: bm.verseNumber } });
                           }}
-                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[#163A2D]/5 transition-colors ${textPrimary}`}
+                          className={`w-full text-left px-4 py-2.5 font-sans text-sm hover:bg-[var(--primary)]/5 transition-colors ${textPrimary}`}
                         >
                           <span className="font-semibold">{bm.bookName} {bm.chapterNumber}:{bm.verseNumber}</span>
                           <span className={`ml-2 text-xs ${textMuted}`}>{bm.note ? 'Note' : 'Bookmark'}</span>
@@ -560,18 +566,18 @@ export function Home() {
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={openSearch}
-                className="w-11 h-11 rounded-full bg-white border border-[#163A2D]/10 shadow-sm flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-white border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
               >
-                <Search size={19} className="text-[#163A2D]" />
+                <Search size={19} className="text-[var(--primary)]" />
               </motion.button>
 
               {/* Hymns shortcut — mobile only (sidebar handles it on md+) */}
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={() => navigate('/hymns')}
-                className="md:hidden flex-shrink-0 w-11 h-11 rounded-full bg-white border border-[#163A2D]/10 shadow-sm flex items-center justify-center"
+                className="md:hidden flex-shrink-0 w-11 h-11 rounded-full bg-white border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
               >
-                <Music2 size={19} className="text-[#163A2D]" strokeWidth={1.7} />
+                <Music2 size={19} className="text-[var(--primary)]" strokeWidth={1.7} />
               </motion.button>
             </div>
           )}
@@ -589,8 +595,8 @@ export function Home() {
           />
           <div className="relative z-10 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${'bg-[#163A2D]/10'}`}>
-                <BookMarked size={20} className={'text-[#163A2D]'} />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${'bg-[var(--primary)]/10'}`}>
+                <BookMarked size={20} className={'text-[var(--primary)]'} />
               </div>
               <div>
                 <h3 className={`font-semibold font-sans text-sm ${textPrimary}`}>Verse of the Day</h3>
@@ -604,7 +610,7 @@ export function Home() {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/bible/JHN/3')}
-              className={`w-full py-3 rounded-2xl font-sans font-semibold text-sm transition-all ${'bg-[#163A2D]/10 text-[#163A2D] hover:bg-[#163A2D]/18'}`}
+              className={`w-full py-3 rounded-2xl font-sans font-semibold text-sm transition-all ${'bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/18'}`}
             >
               Read Chapter
             </motion.button>
@@ -614,7 +620,7 @@ export function Home() {
         {/* ── Mini Music Player (3rd card) ── */}
         <motion.div
           className="rounded-[24px] p-4 flex items-center gap-3 cursor-pointer relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #163A2D 0%, #1e4d38 50%, #215442 100%)' }}
+          style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #1e4d38 50%, #215442 100%)' }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => navigate('/songs')}
@@ -655,14 +661,14 @@ export function Home() {
               <p className={`text-[10px] font-bold uppercase tracking-widest ${textMuted}`}>Daily Plan</p>
               <h3 className={`font-serif font-semibold text-[15px] mt-0.5 ${textPrimary}`}>30-Day New Testament</h3>
             </div>
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${'bg-[#163A2D]/10 text-[#163A2D]'}`}>
+            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${'bg-[var(--primary)]/10 text-[var(--primary)]'}`}>
               Day {STREAK}
             </span>
           </div>
-          <div className={`w-full h-2 rounded-full overflow-hidden ${'bg-[#163A2D]/10'}`}>
+          <div className={`w-full h-2 rounded-full overflow-hidden ${'bg-[var(--primary)]/10'}`}>
             <motion.div
               className="h-full rounded-full"
-              style={{ background: '#163A2D' }}
+              style={{ background: 'var(--primary)' }}
               initial={{ width: 0 }}
               animate={{ width: `${(STREAK / 30) * 100}%` }}
               transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
@@ -672,7 +678,7 @@ export function Home() {
             <p className={`text-xs ${textMuted}`}>{STREAK} of 30 days</p>
             <button
               onClick={() => navigate('/bible/MAT/1')}
-              className={`text-xs font-bold flex items-center gap-0.5 ${'text-[#163A2D]'}`}
+              className={`text-xs font-bold flex items-center gap-0.5 ${'text-[var(--primary)]'}`}
             >
               Continue <ChevronRight size={12} />
             </button>
@@ -715,8 +721,8 @@ export function Home() {
               className="flex flex-col items-center justify-center p-4 rounded-2xl"
               style={cardStyle}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${'bg-[#163A2D]/10'}`}>
-                <Icon size={22} className={'text-[#163A2D]'} />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${'bg-[var(--primary)]/10'}`}>
+                <Icon size={22} className={'text-[var(--primary)]'} />
               </div>
               <p className={`font-semibold font-sans text-sm mb-0.5 ${textPrimary}`}>{label}</p>
               <p className={`font-sans text-xs ${textMuted}`}>{sub}</p>
@@ -731,7 +737,7 @@ export function Home() {
           <motion.div
             whileHover={{ scale: 1.02, y: -2 }}
             className="rounded-[24px] p-5 relative overflow-hidden cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #163A2D 0%, #0a1f14 100%)' }}
+            style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #0a1f14 100%)' }}
             onClick={() => showConfetti || setShowConfetti(true)}
           >
             {/* Pulsing bg flame */}
@@ -808,7 +814,7 @@ export function Home() {
               <button
                 key={i}
                 onClick={() => setQuoteIdx(i)}
-                className={`h-[3px] rounded-full transition-all duration-300 bg-[#163A2D] ${i === quoteIdx ? 'w-6 opacity-70' : 'w-2 opacity-20'}`}
+                className={`h-[3px] rounded-full transition-all duration-300 bg-[var(--primary)] ${i === quoteIdx ? 'w-6 opacity-70' : 'w-2 opacity-20'}`}
               />
             ))}
           </div>
