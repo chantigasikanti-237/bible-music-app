@@ -6,6 +6,7 @@ import { getBibleVersionId, getToken, apiFetch } from '../lib/api';
 import { BIBLE_VERSIONS } from './BibleLibrary';
 import { parseReference } from '../lib/bibleReference';
 import { listDownloadedSongs } from '../lib/offlineMusicStore';
+import { getHymnsLanguage } from '../lib/languagePreference';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
@@ -168,6 +169,7 @@ export function Home() {
   const [songPlaying, setSongPlaying] = useState(false);
   const [recentChapters, setRecentChapters] = useState<RecentChapter[]>([]);
   const [scrollY, setScrollY] = useState(0);
+  const [userName, setUserName] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -183,6 +185,18 @@ export function Home() {
     setShowSearch(false);
     setSearchQuery('');
   };
+
+  // "Hi {Full Name}" replaces the time-based greeting once we know who's
+  // signed in — falls back to the greeting for guests / while this hasn't
+  // resolved yet, rather than a blank header.
+  useEffect(() => {
+    if (!getToken()) return;
+    apiFetch<{ success: boolean; data: { name: string | null } }>('/api/v1/users/me')
+      .then(res => {
+        if (res.success && res.data?.name) setUserName(res.data.name);
+      })
+      .catch(() => {});
+  }, []);
 
   // Load the book list once when search opens, then filter client-side as the user types.
   useEffect(() => {
@@ -271,7 +285,11 @@ export function Home() {
       return;
     }
     hymnSearchTimer.current = setTimeout(() => {
-      fetch(`/api/v1/songs?search=${encodeURIComponent(q)}&limit=${MAX_RESULTS_PER_GROUP}`)
+      // Scoped to the current Hymns language (Universal Language keeps this
+      // in sync same as the Hymns tab's own search) - unscoped, this mixed
+      // every language's hymns together regardless of that preference.
+      const hymnLang = getHymnsLanguage();
+      fetch(`/api/v1/songs?search=${encodeURIComponent(q)}&language=${hymnLang}&limit=${MAX_RESULTS_PER_GROUP}`)
         .then(r => r.json())
         .then((data: { success: boolean; data: any[] }) => {
           if (data.success && Array.isArray(data.data)) {
@@ -530,7 +548,9 @@ export function Home() {
             </motion.div>
           ) : (
             <div>
-              <h1 className={`text-3xl font-bold font-serif ${textPrimary} leading-tight`}>{tc.greeting}</h1>
+              <h1 className={`text-3xl font-bold font-serif ${textPrimary} leading-tight`}>
+                {userName ? `Hi ${userName}` : tc.greeting}
+              </h1>
               <p className={`text-sm mt-1 ${textMuted}`}>{tc.subtitle}</p>
             </div>
           )}
@@ -555,37 +575,6 @@ export function Home() {
               </motion.button>
             </div>
           )}
-        </div>
-
-        {/* ── Quote carousel ── */}
-        <div className="rounded-[22px] p-5" style={cardStyle}>
-          <div className="flex items-center gap-2 mb-3">
-            <Star size={13} className={'text-yellow-600'} fill="currentColor" />
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${textMuted}`}>Daily Inspiration</span>
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={quoteIdx}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35 }}
-            >
-              <p className={`font-serif text-[15px] italic leading-relaxed ${textPrimary}`}>
-                "{QUOTES[quoteIdx].text}"
-              </p>
-              <p className={`text-xs mt-2 font-medium ${textMuted}`}>— {QUOTES[quoteIdx].author}</p>
-            </motion.div>
-          </AnimatePresence>
-          <div className="flex gap-1.5 mt-4">
-            {QUOTES.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setQuoteIdx(i)}
-                className={`h-[3px] rounded-full transition-all duration-300 bg-[#163A2D] ${i === quoteIdx ? 'w-6 opacity-70' : 'w-2 opacity-20'}`}
-              />
-            ))}
-          </div>
         </div>
 
         {/* ── Verse of the Day (parallax hero) ── */}
@@ -792,6 +781,37 @@ export function Home() {
               </div>
             </div>
           </motion.div>
+        </div>
+
+        {/* ── Quote carousel ── */}
+        <div className="rounded-[22px] p-5" style={cardStyle}>
+          <div className="flex items-center gap-2 mb-3">
+            <Star size={13} className={'text-yellow-600'} fill="currentColor" />
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${textMuted}`}>Daily Inspiration</span>
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={quoteIdx}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35 }}
+            >
+              <p className={`font-serif text-[15px] italic leading-relaxed ${textPrimary}`}>
+                "{QUOTES[quoteIdx].text}"
+              </p>
+              <p className={`text-xs mt-2 font-medium ${textMuted}`}>— {QUOTES[quoteIdx].author}</p>
+            </motion.div>
+          </AnimatePresence>
+          <div className="flex gap-1.5 mt-4">
+            {QUOTES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setQuoteIdx(i)}
+                className={`h-[3px] rounded-full transition-all duration-300 bg-[#163A2D] ${i === quoteIdx ? 'w-6 opacity-70' : 'w-2 opacity-20'}`}
+              />
+            ))}
+          </div>
         </div>
 
       </div>

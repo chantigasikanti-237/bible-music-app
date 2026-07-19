@@ -49,11 +49,14 @@ app.use(
     // Default img-src ('self' + data:) would silently block every YouTube
     // song/hymn thumbnail now that the frontend's HTML is served from here
     // too and inherits this CSP - those come straight from YouTube's
-    // thumbnail CDN, not our own origin.
+    // thumbnail CDN, not our own origin. Same problem for media-src (no
+    // explicit default, falls back to 'self') and the Bible chapter audio
+    // narration, which streams straight from YouVersion's CDN.
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "img-src": ["'self'", "data:", "https://i.ytimg.com", "https://*.ggpht.com", "https://*.googleusercontent.com"],
+        "media-src": ["'self'", "https://*.youversionapi.com"],
       },
     },
   })

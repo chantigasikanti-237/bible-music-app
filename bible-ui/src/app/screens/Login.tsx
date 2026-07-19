@@ -160,7 +160,7 @@ export function Login() {
         <div className="w-20 h-20 rounded-[24px] bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/30">
           <BookOpen size={36} className="text-primary-foreground" />
         </div>
-        <h1 className="text-foreground font-serif text-3xl font-bold mb-1">Bible App</h1>
+        <h1 className="text-foreground font-serif text-3xl font-bold mb-1">Christ Selah</h1>
         <p className="text-muted-foreground font-sans text-sm">Your spiritual journey</p>
       </motion.div>
 

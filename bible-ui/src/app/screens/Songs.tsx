@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { Search, Play, Pause, Heart, Download, TrendingUp, X, Music, Globe, Check, CloudDownload, ListMusic, Plus, Trash2, ChevronLeft, Clock } from 'lucide-react';
+import { Search, Play, Pause, Heart, Download, TrendingUp, X, Music, Globe, Check, CloudDownload, ListMusic, Plus, Trash2, ChevronLeft, Clock, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MiniPlayer, type PlayerSong } from '../components/MiniPlayer';
 import { getSongAudioBlobUrlOffline, isSongDownloaded, removeSongOffline, listDownloadedSongs } from '../lib/offlineMusicStore';
 import { subscribe, getSnapshot, getActiveDownloads, startSongDownload, cancelSongDownload, getLastLimitMessage } from '../lib/musicDownloadManager';
 import { apiFetch } from '../lib/api';
 import { getMusicLanguageKey, setMusicLanguageKey, isUniversalLanguageEnabled, applyUniversalLanguage, musicKeyToCode, getMusicFollowsUniversal } from '../lib/languagePreference';
+import { useVoiceSearch, isVoiceSearchSupported } from '../lib/useVoiceSearch';
 import { BIBLE_VERSIONS } from './BibleLibrary';
 import {
   getPlaylists, createPlaylist, deletePlaylist, addSongToPlaylist, removeSongFromPlaylist, getPlaylist,
@@ -81,6 +82,7 @@ export function Songs() {
   const currentLang = LANGUAGES.find(l => l.key === lang) || LANGUAGES[0];
   const [universalOn] = useState(isUniversalLanguageEnabled);
   const [musicFollowsUniversal] = useState(getMusicFollowsUniversal);
+  const { isListening, start: startVoiceSearch } = useVoiceSearch(setSearchQuery, musicKeyToCode(lang));
 
   /* ── Assets: Favourites / Downloads / Playlists ──────────── */
   const [assetsView, setAssetsView] = useState<'favorites' | 'downloads' | 'playlists'>('favorites');
@@ -526,13 +528,32 @@ export function Songs() {
             placeholder="Search songs, artists..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-card rounded-2xl pl-11 pr-10 py-3 text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans text-sm"
+            className={`w-full bg-card rounded-2xl pl-11 py-3 text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans text-sm ${
+              isVoiceSearchSupported() ? (searchQuery ? 'pr-20' : 'pr-11') : 'pr-10'
+            }`}
           />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X size={16} className="text-muted-foreground" />
-            </button>
-          )}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {isVoiceSearchSupported() && (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={startVoiceSearch}
+                title="Search by voice"
+                className="flex-shrink-0"
+              >
+                {isListening
+                  ? <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                      <Mic size={16} className="text-destructive" />
+                    </motion.div>
+                  : <Mic size={16} className="text-muted-foreground" />
+                }
+              </motion.button>
+            )}
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="flex-shrink-0">
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
