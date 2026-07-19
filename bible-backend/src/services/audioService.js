@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { HttpsProxyAgent } = require("https-proxy-agent");
 
 const AppError = require("../utils/AppError");
 const { ensureRedisConnection } = require("../config/redis");
@@ -7,6 +8,12 @@ const { config } = require("../config/env");
 // yt-dlp options merged into every YouTube-facing call below — adds a proxy
 // when YTDLP_PROXY_URL is configured, a no-op spread otherwise.
 const ytdlpProxyOpts = () => (config.ytdlpProxyUrl ? { proxy: config.ytdlpProxyUrl } : {});
+
+// The audio URL yt-dlp extracts is signed to whichever IP made the
+// extraction request — once that goes through YTDLP_PROXY_URL, fetching the
+// URL itself must go through the *same* proxy, or Google's CDN 403s on the
+// IP mismatch. One agent, reused across requests/redirects.
+const streamProxyAgent = config.ytdlpProxyUrl ? new HttpsProxyAgent(config.ytdlpProxyUrl) : null;
 
 const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
@@ -661,7 +668,10 @@ const createAudioService = ({ httpClient = axios } = {}) => {
 
       const fetchAndPipe = (url, redirectsLeft) => {
         const protocol = url.startsWith("https") ? https : http;
-        currentReq = protocol.get(url, { headers: proxyHeaders }, (audioRes) => {
+        const getOpts = streamProxyAgent
+          ? { headers: proxyHeaders, agent: streamProxyAgent }
+          : { headers: proxyHeaders };
+        currentReq = protocol.get(url, getOpts, (audioRes) => {
           const status = audioRes.statusCode || 0;
           if ([301, 302, 303, 307, 308].includes(status) && audioRes.headers.location && redirectsLeft > 0) {
             audioRes.resume(); // discard the empty redirect body
