@@ -2,6 +2,11 @@ const axios = require("axios");
 
 const AppError = require("../utils/AppError");
 const { ensureRedisConnection } = require("../config/redis");
+const { config } = require("../config/env");
+
+// yt-dlp options merged into every YouTube-facing call below — adds a proxy
+// when YTDLP_PROXY_URL is configured, a no-op spread otherwise.
+const ytdlpProxyOpts = () => (config.ytdlpProxyUrl ? { proxy: config.ytdlpProxyUrl } : {});
 
 const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const YOUTUBE_VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
@@ -176,6 +181,7 @@ const _runYtdlpSearch = async (
       dumpSingleJson: true,
       noWarnings: true,
       flatPlaylist: true,
+      ...ytdlpProxyOpts(),
     });
     return (result?.entries || [])
       .filter((e) => e.id && e.title && (e.duration == null || (e.duration >= minDurationSeconds && e.duration < maxDurationSeconds)))
@@ -561,6 +567,7 @@ const createAudioService = ({ httpClient = axios } = {}) => {
             // hitting — the web/android/ios clients all fail or need a PO
             // Token now, android_vr doesn't (see yt-dlp issue #12482).
             extractorArgs: "youtube:player_client=android_vr",
+            ...ytdlpProxyOpts(),
           });
           const rawUrl = String(result || "").trim().split("\n")[0];
           if (!rawUrl || !rawUrl.startsWith("http")) {
@@ -610,6 +617,7 @@ const createAudioService = ({ httpClient = axios } = {}) => {
               format: "bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best",
               socketTimeout: 15,
               extractorArgs: "youtube:player_client=android_vr",
+              ...ytdlpProxyOpts(),
             }
           );
           audioUrl = String(result || "").trim().split("\n")[0];

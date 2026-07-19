@@ -77,6 +77,11 @@ const config = Object.freeze({
     parseInteger(process.env.EMAIL_VERIFICATION_TTL_MINUTES, 60) * 60 * 1000,
   bcryptSaltRounds: parseInteger(process.env.BCRYPT_SALT_ROUNDS, 12),
   youVersionAppKey: String(process.env.YOUVERSION_APP_KEY || "").trim(),
+  // Routes yt-dlp's YouTube requests (search + audio-URL extraction) through
+  // a proxy — needed because YouTube blocks/rate-limits known datacenter IP
+  // ranges (Render included), which a residential/rotating proxy avoids.
+  // e.g. http://user:pass@proxy-host:port or socks5://user:pass@host:port
+  ytdlpProxyUrl: String(process.env.YTDLP_PROXY_URL || "").trim() || null,
   corsOrigins,
   allowAnyCorsOrigin,
   redisUrl: String(process.env.REDIS_URL || "").trim(),
