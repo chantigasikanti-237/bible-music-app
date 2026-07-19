@@ -644,33 +644,57 @@ const createAudioService = ({ httpClient = axios } = {}) => {
 
       res.setHeader("Accept-Ranges", "bytes");
 
-      const protocol = audioUrl.startsWith("https") ? https : http;
-      const audioReq = protocol.get(audioUrl, { headers: proxyHeaders }, (audioRes) => {
-        // Forward the real Content-Type, Content-Length, Content-Range.
-        const ct = audioRes.headers["content-type"];
-        res.setHeader("Content-Type", ct || "audio/webm");
-        if (audioRes.headers["content-length"]) {
-          res.setHeader("Content-Length", audioRes.headers["content-length"]);
-        }
-        if (audioRes.headers["content-range"]) {
-          res.setHeader("Content-Range", audioRes.headers["content-range"]);
-        }
-        res.status(audioRes.statusCode || 200);
-        audioRes.pipe(res);
-        audioRes.on("error", (err) => {
-          console.error(`[audioService] Proxy stream error for ${videoId}:`, err.message);
+      // Google's CDN commonly 302s a freshly-extracted URL to a different
+      // edge server (confirmed directly — same URL, same request, redirects
+      // on a plain fetch). node's http.get doesn't follow redirects on its
+      // own, and this used to just forward that bare 3xx straight to the
+      // client, which had no Location header to act on (only Content-Type/
+      // Length/Range were copied) — a silent, un-debuggable "can't play"
+      // with no error surfaced anywhere. Follow it server-side instead, so
+      // the client only ever sees the real audio response. Must stay
+      // server-side (not a client-facing redirect) so the same IP that
+      // extracted the URL is the one that fetches it — see the IP-mismatch
+      // 403 note above.
+      const MAX_REDIRECTS = 5;
+      let currentReq = null;
+      req.on("close", () => currentReq?.destroy());
+
+      const fetchAndPipe = (url, redirectsLeft) => {
+        const protocol = url.startsWith("https") ? https : http;
+        currentReq = protocol.get(url, { headers: proxyHeaders }, (audioRes) => {
+          const status = audioRes.statusCode || 0;
+          if ([301, 302, 303, 307, 308].includes(status) && audioRes.headers.location && redirectsLeft > 0) {
+            audioRes.resume(); // discard the empty redirect body
+            fetchAndPipe(audioRes.headers.location, redirectsLeft - 1);
+            return;
+          }
+
+          // Forward the real Content-Type, Content-Length, Content-Range.
+          const ct = audioRes.headers["content-type"];
+          res.setHeader("Content-Type", ct || "audio/webm");
+          if (audioRes.headers["content-length"]) {
+            res.setHeader("Content-Length", audioRes.headers["content-length"]);
+          }
+          if (audioRes.headers["content-range"]) {
+            res.setHeader("Content-Range", audioRes.headers["content-range"]);
+          }
+          res.status(status || 200);
+          audioRes.pipe(res);
+          audioRes.on("error", (err) => {
+            console.error(`[audioService] Proxy stream error for ${videoId}:`, err.message);
+            if (!res.headersSent) res.status(502).end();
+            else res.destroy();
+          });
+        });
+
+        currentReq.on("error", (err) => {
+          console.error(`[audioService] HTTP request error for ${videoId}:`, err.message);
           if (!res.headersSent) res.status(502).end();
           else res.destroy();
         });
-      });
+      };
 
-      audioReq.on("error", (err) => {
-        console.error(`[audioService] HTTP request error for ${videoId}:`, err.message);
-        if (!res.headersSent) res.status(502).end();
-        else res.destroy();
-      });
-
-      req.on("close", () => audioReq.destroy());
+      fetchAndPipe(audioUrl, MAX_REDIRECTS);
     },
 
     async listSongsByLanguage(language) {
