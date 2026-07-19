@@ -85,4 +85,27 @@ router.get(
 router.get("/songs", listSongs);
 router.get("/search/verses", searchVerses);
 
+// TEMPORARY — diagnosing why songs inserted directly in Atlas aren't
+// showing up via the API despite isPublished being set. Remove once
+// resolved.
+router.get("/debug/db-info", async (req, res) => {
+  const mongoose = require("mongoose");
+  const Song = require("../models/Song");
+  const [totalSongs, publishedSongs, sampleSong] = await Promise.all([
+    Song.countDocuments({}),
+    Song.countDocuments({ isPublished: true }),
+    Song.findOne({}).lean(),
+  ]);
+  res.json({
+    success: true,
+    data: {
+      databaseName: mongoose.connection.name,
+      host: mongoose.connection.host,
+      totalSongs,
+      publishedSongs,
+      sampleSong,
+    },
+  });
+});
+
 module.exports = router;
