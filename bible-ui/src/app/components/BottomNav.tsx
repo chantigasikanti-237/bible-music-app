@@ -215,7 +215,7 @@ export function BottomNav() {
           transition={{ type: 'spring', damping: 28, stiffness: 280 }}
           style={{ pointerEvents: playerOpen ? 'none' : undefined }}
         >
-          <nav className="max-w-md mx-auto bg-[#F6F1E7] dark:bg-card border border-[var(--primary)]/10 shadow-[0_8px_32px_rgba(22,58,45,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl rounded-[2rem] px-2 py-2 pointer-events-auto flex items-center justify-around">
+          <nav className="max-w-md mx-auto bg-[#F6F1E7] dark:bg-card border border-[var(--primary)]/10 shadow-[0_8px_32px_rgba(44,44,44,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl rounded-[2rem] px-2 py-2 pointer-events-auto flex items-center justify-around">
             {mobileNavItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -265,7 +265,7 @@ export function BottomNav() {
       )}
 
       {/* ── Desktop / Tablet sidebar (hidden on mobile) ──────────── */}
-      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] dark:bg-card border-r border-[var(--primary)]/10 shadow-[2px_0_20px_rgba(22,58,45,0.07)] dark:shadow-[2px_0_20px_rgba(0,0,0,0.4)]">
+      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] dark:bg-card border-r border-[var(--primary)]/10 shadow-[2px_0_20px_rgba(44,44,44,0.07)] dark:shadow-[2px_0_20px_rgba(0,0,0,0.4)]">
 
         {/* Nav items — start from top, no branding */}
         <nav className="flex-1 px-2 pt-6 pb-4 space-y-1 overflow-y-auto">

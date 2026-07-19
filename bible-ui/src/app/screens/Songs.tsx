@@ -809,7 +809,7 @@ export function Songs() {
                       <div>
                         <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowCreatePlaylist(true)}
                           className="w-full flex items-center justify-center gap-2.5 py-3.5 mb-4 rounded-2xl text-white font-sans text-sm font-bold shadow-lg shadow-[var(--primary)]/30 transition-transform"
-                          style={{ background: 'linear-gradient(135deg, #1a4d2e 0%, var(--primary) 100%)' }}>
+                          style={{ background: 'linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)' }}>
                           <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center">
                             <Plus size={14} />
                           </div>

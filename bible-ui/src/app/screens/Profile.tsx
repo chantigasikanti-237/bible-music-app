@@ -50,7 +50,7 @@ const settingsGroups = [
 
 export function Profile() {
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [user, setUser] = useState<UserProfile | null>(null);
 
   const [showVerifySheet, setShowVerifySheet] = useState(false);
@@ -252,7 +252,7 @@ export function Profile() {
                   <SettingsRow
                     icon={item.icon}
                     label={item.label}
-                    sublabel={item.sublabel}
+                    sublabel={item.label === 'Theme' ? (isDarkMode ? 'Dark' : 'Light') : item.sublabel}
                     onClick={item.route ? () => navigate(item.route!) : undefined}
                     rightAction={
                       item.label === 'Theme' ? (
@@ -260,12 +260,10 @@ export function Profile() {
                           whileTap={{ scale: 0.9 }}
                           onClick={(e: any) => {
                             e.stopPropagation();
-                            setIsDarkMode(!isDarkMode);
-                            if (!isDarkMode) {
-                              document.documentElement.classList.add('dark');
-                            } else {
-                              document.documentElement.classList.remove('dark');
-                            }
+                            const next = !isDarkMode;
+                            setIsDarkMode(next);
+                            document.documentElement.classList.toggle('dark', next);
+                            localStorage.setItem('theme', next ? 'dark' : 'light');
                           }}
                           className={`w-14 h-8 rounded-full transition-all relative ${
                             isDarkMode ? 'bg-primary' : 'bg-muted'
