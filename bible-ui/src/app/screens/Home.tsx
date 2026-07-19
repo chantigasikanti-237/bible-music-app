@@ -176,6 +176,7 @@ export function Home() {
   const [recentChapters, setRecentChapters] = useState<RecentChapter[]>([]);
   const [scrollY, setScrollY] = useState(0);
   const [userName, setUserName] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -359,9 +360,9 @@ export function Home() {
   const textMuted = 'text-[var(--primary)]/55';
 
   const cardStyle = {
-    background: '#ffffff',
-    border: '1px solid rgba(22,58,45,0.08)',
-    boxShadow: '0 2px 12px rgba(22,58,45,0.06)',
+    background: 'var(--card)',
+    border: '1px solid var(--border)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
   } as React.CSSProperties;
 
   // Quote carousel
@@ -399,6 +400,7 @@ export function Home() {
       style={{ minHeight: '100%' }}
       className="w-full relative"
     >
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
       {/* ── Content ── */}
       <div className="px-4 pt-10 pb-28 max-w-2xl mx-auto space-y-4">
 
@@ -590,7 +592,7 @@ export function Home() {
             className="absolute inset-0 pointer-events-none"
             style={{
               transform: `translateY(${scrollY * 0.18}px)`,
-              background: 'radial-gradient(ellipse at 75% 25%, rgba(22,58,45,0.14) 0%, transparent 65%)',
+              background: 'radial-gradient(ellipse at 75% 25%, color-mix(in oklab, var(--primary) 14%, transparent) 0%, transparent 65%)',
             }}
           />
           <div className="relative z-10 p-6">
@@ -620,7 +622,7 @@ export function Home() {
         {/* ── Mini Music Player (3rd card) ── */}
         <motion.div
           className="rounded-[24px] p-4 flex items-center gap-3 cursor-pointer relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #1e4d38 50%, #215442 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #163A2D 0%, #1e4d38 50%, #215442 100%)' }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => navigate('/songs')}
@@ -737,7 +739,7 @@ export function Home() {
           <motion.div
             whileHover={{ scale: 1.02, y: -2 }}
             className="rounded-[24px] p-5 relative overflow-hidden cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #0a1f14 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #163A2D 0%, #0a1f14 100%)' }}
             onClick={() => showConfetti || setShowConfetti(true)}
           >
             {/* Pulsing bg flame */}
@@ -773,11 +775,11 @@ export function Home() {
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
               <div className="flex items-center gap-2">
                 <ProgressRing percent={0.08} color="#6EE7B7" size={44} strokeWidth={4}
-                  trackColor={'rgba(22,58,45,0.12)'}>
+                  trackColor={'color-mix(in oklab, var(--primary) 12%, transparent)'}>
                   <span className={`text-[9px] font-bold ${textPrimary}`}>OT</span>
                 </ProgressRing>
                 <ProgressRing percent={0.23} color="#93C5FD" size={44} strokeWidth={4}
-                  trackColor={'rgba(22,58,45,0.12)'}>
+                  trackColor={'color-mix(in oklab, var(--primary) 12%, transparent)'}>
                   <span className={`text-[9px] font-bold ${textPrimary}`}>NT</span>
                 </ProgressRing>
               </div>

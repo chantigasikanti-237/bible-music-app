@@ -265,7 +265,7 @@ export function BottomNav() {
       )}
 
       {/* ── Desktop / Tablet sidebar (hidden on mobile) ──────────── */}
-      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] dark:bg-card border-r border-[var(--primary)]/10 shadow-[2px_0_20px_rgba(22,58,45,0.07)]">
+      <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-[72px] xl:w-[220px] z-50 flex-col bg-[#F6F1E7] dark:bg-card border-r border-[var(--primary)]/10 shadow-[2px_0_20px_rgba(22,58,45,0.07)] dark:shadow-[2px_0_20px_rgba(0,0,0,0.4)]">
 
         {/* Nav items — start from top, no branding */}
         <nav className="flex-1 px-2 pt-6 pb-4 space-y-1 overflow-y-auto">
