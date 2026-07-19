@@ -284,11 +284,14 @@ export function Songs() {
     setAudioDuration(0);
     try {
       const offlineUrl = await getSongAudioBlobUrlOffline(song.videoId);
-      let url = offlineUrl;
-      if (!url) {
-        const res = await fetch(`/api/audio/url/${song.videoId}`);
-        ({ url } = await res.json());
-      }
+      // Online path plays through our own /stream proxy, not the raw
+      // extracted URL /api/audio/url returns - that URL is IP-locked to
+      // whichever server made the yt-dlp extraction request (ours, via a
+      // residential proxy), so a client fetching it directly - the phone,
+      // on its own IP - always gets rejected. /stream re-fetches and pipes
+      // the bytes server-side, keeping the same IP throughout, and needs no
+      // separate URL round-trip since it resolves the video ID itself.
+      const url = offlineUrl || `/api/audio/stream/${song.videoId}`;
       audioRef.current?.pause();
       const audio = new Audio(url);
       audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
