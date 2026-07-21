@@ -85,4 +85,28 @@ router.get(
 router.get("/songs", listSongs);
 router.get("/search/verses", searchVerses);
 
+// TEMPORARY - inspecting the raw YouVersion API response shape to fix verse
+// splitting. Remove once resolved.
+router.get("/debug/youversion-raw/:versionId", async (req, res) => {
+  const axios = require("axios");
+  const { config } = require("../config/env");
+  try {
+    const response = await axios.get(
+      `https://api.youversion.com/v1/bibles/${req.params.versionId}/passages/GEN.1`,
+      { headers: { "x-yvp-app-key": config.youVersionAppKey }, timeout: 15000, validateStatus: () => true }
+    );
+    const data = response.data;
+    res.json({
+      status: response.status,
+      topLevelKeys: data && typeof data === "object" ? Object.keys(data) : typeof data,
+      hasVersesArray: Array.isArray(data?.verses),
+      versesSample: Array.isArray(data?.verses) ? data.verses.slice(0, 2) : null,
+      contentSample: typeof data?.content === "string" ? data.content.slice(0, 300) : null,
+      dataSample: JSON.stringify(data).slice(0, 800),
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 module.exports = router;
