@@ -165,6 +165,69 @@ const fetchChapterFromPublicPage = async ({
   });
 };
 
+const parseVerseNumberFromTitle = (entry) => {
+  const fromTitle = Number.parseInt(String(entry?.title ?? ""), 10);
+  if (Number.isFinite(fromTitle)) {
+    return fromTitle;
+  }
+  const lastSegment = String(entry?.passage_id ?? "").split(".").pop();
+  const fromPassageId = Number.parseInt(lastSegment, 10);
+  return Number.isFinite(fromPassageId) ? fromPassageId : null;
+};
+
+// The API's /passages/:passageId endpoint returns an entire chapter as one
+// flat, unnumbered block of text with no verse boundaries at all - fine for
+// display, useless for anything that needs a specific verse (bookmarking,
+// notes, "jump to verse 16", sharing a single verse). /verses lists which
+// verses exist in the chapter (numbers + their own single-verse passage
+// IDs, e.g. GEN.1.16) but not their text; re-requesting /passages/ with
+// each of those single-verse IDs does return that verse's own text alone -
+// so building a proper verses array means one list call plus one call per
+// verse. Heavier than the old single-request approach, but this only ever
+// runs once per chapter (the result is cached in Mongo forever afterward).
+const fetchVersesFromApi = async ({ versionId, bookId, chapterNumber }) => {
+  const listUrl = `${YOUVERSION_BASE_URL}/bibles/${versionId}/books/${encodeURIComponent(
+    bookId
+  )}/chapters/${chapterNumber}/verses`;
+  const listResponse = await axios.get(listUrl, {
+    headers: { "x-yvp-app-key": config.youVersionAppKey },
+    timeout: 15000,
+  });
+  const entries = Array.isArray(listResponse.data?.data)
+    ? listResponse.data.data
+    : [];
+  if (entries.length === 0) {
+    return [];
+  }
+
+  const results = await Promise.all(
+    entries.map(async (entry) => {
+      const number = parseVerseNumberFromTitle(entry);
+      const versePassageId =
+        typeof entry?.passage_id === "string" && entry.passage_id.trim()
+          ? entry.passage_id.trim()
+          : null;
+      if (!number || !versePassageId) {
+        return null;
+      }
+      try {
+        const verseResponse = await axios.get(
+          `${YOUVERSION_BASE_URL}/bibles/${versionId}/passages/${encodeURIComponent(
+            versePassageId
+          )}`,
+          { headers: { "x-yvp-app-key": config.youVersionAppKey }, timeout: 15000 }
+        );
+        const text = extractScriptureContent(verseResponse.data).trim();
+        return text ? { number, text } : null;
+      } catch (_) {
+        return null;
+      }
+    })
+  );
+
+  return results.filter(Boolean).sort((left, right) => left.number - right.number);
+};
+
 const fetchChapterFromApi = async ({
   versionId,
   bookId,
@@ -176,22 +239,12 @@ const fetchChapterFromApi = async ({
   }
 
   try {
-    const url = `${YOUVERSION_BASE_URL}/bibles/${versionId}/passages/${encodeURIComponent(
-      passageId
-    )}`;
-    const response = await axios.get(url, {
-      headers: {
-        "x-yvp-app-key": config.youVersionAppKey,
-      },
-      timeout: 15000,
-    });
-
-    const content = extractScriptureContent(response.data).trim();
-    if (!content) {
+    const verses = await fetchVersesFromApi({ versionId, bookId, chapterNumber });
+    if (verses.length === 0) {
       return null;
     }
 
-    const verses = extractVersesFromContent(content);
+    const content = verses.map((verse) => `${verse.number} ${verse.text}`).join("\n");
     let audioUrl = null;
     try {
       audioUrl = await fetchAudioUrlFromPublicPage({ versionId, passageId });

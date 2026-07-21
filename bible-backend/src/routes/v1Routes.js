@@ -85,38 +85,4 @@ router.get(
 router.get("/songs", listSongs);
 router.get("/search/verses", searchVerses);
 
-// TEMPORARY - probing the YouVersion API for a verse-structured response
-// format (USFM/USX/json) instead of flat text. Remove once resolved.
-router.get("/debug/youversion-formats/:versionId", async (req, res) => {
-  const axios = require("axios");
-  const { config } = require("../config/env");
-  const versionId = req.params.versionId;
-  const attempts = [
-    { label: "single-verse-GEN.1.1", url: `https://api.youversion.com/v1/bibles/${versionId}/passages/GEN.1.1`, headers: {} },
-    { label: "single-verse-GEN.1.16", url: `https://api.youversion.com/v1/bibles/${versionId}/passages/GEN.1.16`, headers: {} },
-  ];
-
-  const results = [];
-  for (const attempt of attempts) {
-    try {
-      const response = await axios.get(attempt.url, {
-        headers: { "x-yvp-app-key": config.youVersionAppKey, ...attempt.headers },
-        timeout: 15000,
-        validateStatus: () => true,
-      });
-      const data = response.data;
-      results.push({
-        label: attempt.label,
-        status: response.status,
-        topLevelKeys: data && typeof data === "object" ? Object.keys(data) : typeof data,
-        hasVersesArray: Array.isArray(data?.verses),
-        sample: JSON.stringify(data).slice(0, 250),
-      });
-    } catch (error) {
-      results.push({ label: attempt.label, error: error.message });
-    }
-  }
-  res.json(results);
-});
-
 module.exports = router;
