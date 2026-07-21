@@ -91,15 +91,9 @@ router.get("/debug/youversion-formats/:versionId", async (req, res) => {
   const axios = require("axios");
   const { config } = require("../config/env");
   const versionId = req.params.versionId;
-  const base = `https://api.youversion.com/v1/bibles/${versionId}/passages/GEN.1`;
   const attempts = [
-    { label: "no-params", url: base, headers: {} },
-    { label: "format=usfm", url: `${base}?format=usfm`, headers: {} },
-    { label: "format=usx", url: `${base}?format=usx`, headers: {} },
-    { label: "format=json", url: `${base}?format=json`, headers: {} },
-    { label: "content-type=verse", url: `${base}?content-type=verse`, headers: {} },
-    { label: "accept-usfm-header", url: base, headers: { Accept: "application/vnd.youversion.usfm+json" } },
-    { label: "verses-subpath", url: `https://api.youversion.com/v1/bibles/${versionId}/books/GEN/chapters/1/verses`, headers: {} },
+    { label: "single-verse-GEN.1.1", url: `https://api.youversion.com/v1/bibles/${versionId}/passages/GEN.1.1`, headers: {} },
+    { label: "single-verse-GEN.1.16", url: `https://api.youversion.com/v1/bibles/${versionId}/passages/GEN.1.16`, headers: {} },
   ];
 
   const results = [];
