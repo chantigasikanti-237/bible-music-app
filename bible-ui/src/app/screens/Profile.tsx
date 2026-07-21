@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { PageContainer, Heading2, Text, SettingsRow } from '../components/BibleSystem';
 import { apiFetch, clearToken, getToken } from '../lib/api';
+import { reportThemeToNativeShell } from '../lib/nativeTheme';
 
 interface UserProfile {
   id: string;
@@ -264,6 +265,7 @@ export function Profile() {
                             setIsDarkMode(next);
                             document.documentElement.classList.toggle('dark', next);
                             localStorage.setItem('theme', next ? 'dark' : 'light');
+                            reportThemeToNativeShell(next);
                           }}
                           className={`w-14 h-8 rounded-full transition-all relative ${
                             isDarkMode ? 'bg-primary' : 'bg-muted'

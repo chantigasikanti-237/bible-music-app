@@ -1,9 +1,33 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+
+// Matches the web app's own --background token for each theme (theme.css) -
+// kept in sync with it manually since the native shell has no other way to
+// read a CSS variable.
+const _lightStatusBarColor = Color(0xFFF6F1E7);
+const _darkStatusBarColor = Color(0xFF1A1A1A);
+
+// Status/navigation bar color and icon brightness only ever change in
+// response to the web app reporting its own theme (see the 'ThemeChannel'
+// JavaScript channel below) - so this always reflects what's actually on
+// screen inside the WebView, the same edge-to-edge theming YouTube/Instagram
+// do, instead of a status bar stuck on one fixed color regardless of theme.
+void _applyThemeToSystemUI(bool isDark) {
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: isDark ? _darkStatusBarColor : _lightStatusBarColor,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: isDark ? _darkStatusBarColor : _lightStatusBarColor,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    ),
+  );
+}
 
 /// Full-screen WebView that hosts the React bible-ui, served directly from
 /// the deployed backend (which also serves the built frontend — see
@@ -23,6 +47,11 @@ class _WebAppScreenState extends State<WebAppScreen> {
   @override
   void initState() {
     super.initState();
+    // Light until the page reports otherwise - matches the native background
+    // color set just below, so there's no mismatched flash before the web
+    // app's own theme (read from its localStorage) checks in.
+    _applyThemeToSystemUI(false);
+
     // Grants/denies the WebView's own permission prompt for getUserMedia()
     // (the Web Speech API's mic access goes through the same prompt) — only
     // takes effect via this constructor parameter, not a post-construction
@@ -41,7 +70,17 @@ class _WebAppScreenState extends State<WebAppScreen> {
       // was otherwise invisible outside Chrome's own devtools.
       ..setOnConsoleMessage((JavaScriptConsoleMessage message) {
         debugPrint('[WebView console] ${message.level.name}: ${message.message}');
-      });
+      })
+      // The web app posts its current theme here on load and on every
+      // toggle (see main.tsx / Profile.tsx) so the status/nav bar can match
+      // it, the same way YouTube/Instagram do - otherwise it's stuck on
+      // whichever color was set at startup regardless of in-app theme.
+      ..addJavaScriptChannel(
+        'ThemeChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          _applyThemeToSystemUI(message.message == 'dark');
+        },
+      );
 
     // webview_flutter_web has no NavigationDelegate implementation yet —
     // setOnPageFinished/setOnPageStarted throw UnimplementedError there, so
