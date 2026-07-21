@@ -85,4 +85,29 @@ router.get(
 router.get("/songs", listSongs);
 router.get("/search/verses", searchVerses);
 
+// TEMPORARY - diagnosing why the YouVersion API call always fails and falls
+// through to the bible.com scrape. Remove once resolved.
+router.get("/debug/youversion-api", async (_req, res) => {
+  const axios = require("axios");
+  const { config } = require("../config/env");
+  const keyLength = (config.youVersionAppKey || "").length;
+  if (!keyLength) {
+    return res.json({ keyConfigured: false });
+  }
+  try {
+    const response = await axios.get(
+      "https://api.youversion.com/v1/bibles/111/passages/GEN.1",
+      { headers: { "x-yvp-app-key": config.youVersionAppKey }, timeout: 15000, validateStatus: () => true }
+    );
+    res.json({
+      keyConfigured: true,
+      keyLength,
+      upstreamStatus: response.status,
+      bodySample: JSON.stringify(response.data).slice(0, 500),
+    });
+  } catch (error) {
+    res.json({ keyConfigured: true, keyLength, error: error.message });
+  }
+});
+
 module.exports = router;
