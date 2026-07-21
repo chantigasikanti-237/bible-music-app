@@ -503,7 +503,7 @@ export function ReadingScreen() {
           disabled={chapterNum <= 1}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
             chapterNum > 1
-              ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/30'
+              ? 'bg-[var(--primary)] text-primary-foreground shadow-md shadow-[var(--primary)]/30'
               : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
           }`}
         >
@@ -529,7 +529,7 @@ export function ReadingScreen() {
           disabled={chapterCount > 0 && chapterNum >= chapterCount}
           className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all ${
             chapterCount === 0 || chapterNum < chapterCount
-              ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/30'
+              ? 'bg-[var(--primary)] text-primary-foreground shadow-md shadow-[var(--primary)]/30'
               : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
           }`}
         >
@@ -623,7 +623,7 @@ export function ReadingScreen() {
                             document.getElementById(`verse-${v.number}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           }, 300);
                         }}
-                        className="aspect-square rounded-xl flex items-center justify-center font-bold font-sans text-sm bg-muted text-foreground hover:bg-[var(--primary)] hover:text-white transition-all"
+                        className="aspect-square rounded-xl flex items-center justify-center font-bold font-sans text-sm bg-muted text-foreground hover:bg-[var(--primary)] hover:text-primary-foreground transition-all"
                       >
                         {v.number}
                       </motion.button>
@@ -746,7 +746,7 @@ export function ReadingScreen() {
                     <button
                       onClick={() => submitNote(verseMenu.verse)}
                       disabled={!noteText.trim() || noteSaving}
-                      className="flex items-center gap-1.5 bg-[var(--primary)] text-white rounded-xl px-3 py-1.5 text-xs font-semibold font-sans disabled:opacity-50"
+                      className="flex items-center gap-1.5 bg-[var(--primary)] text-primary-foreground rounded-xl px-3 py-1.5 text-xs font-semibold font-sans disabled:opacity-50"
                     >
                       <Check size={12} /> {noteSaving ? 'Saving…' : 'Save Note'}
                     </button>

@@ -237,11 +237,11 @@ export function BottomNav() {
                       className="w-12 h-10 rounded-xl bg-[var(--primary)] flex items-center justify-center shadow-md shadow-[var(--primary)]/30"
                       initial={false} transition={{ type: 'spring', stiffness: 450, damping: 32 }}>
                       {item.id === 'bible' ? (
-                        <AnimatedBibleIcon size={20} className="text-white" strokeWidth={1.8} isActive />
+                        <AnimatedBibleIcon size={20} className="text-primary-foreground" strokeWidth={1.8} isActive />
                       ) : item.id === 'songs' ? (
-                        <AnimatedMusicIcon size={20} className="text-white" strokeWidth={1.8} isActive isPlaying={songPlaying} />
+                        <AnimatedMusicIcon size={20} className="text-primary-foreground" strokeWidth={1.8} isActive isPlaying={songPlaying} />
                       ) : (
-                        <item.Icon size={20} className="text-white" strokeWidth={1.8} />
+                        <item.Icon size={20} className="text-primary-foreground" strokeWidth={1.8} />
                       )}
                     </motion.div>
                   ) : (
@@ -284,7 +284,7 @@ export function BottomNav() {
                 onClick={() => { setActiveTab(item.id); navigate(item.path); }}
                 className={`w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl transition-all outline-none ${
                   isActive
-                    ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20'
+                    ? 'bg-[var(--primary)] text-primary-foreground shadow-md shadow-[var(--primary)]/20'
                     : 'text-[var(--primary)]/55 hover:bg-[var(--primary)]/8 hover:text-[var(--primary)]'
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}

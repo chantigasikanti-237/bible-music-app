@@ -646,11 +646,11 @@ export function Songs() {
                       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-white' : 'text-muted-foreground'}`}>
+                  <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                     {tab === 'trending' ? <TrendingUp size={14} /> : <Download size={14} />}
                     {tab === 'trending' ? 'Trending' : 'Assets'}
                     {tab === 'assets' && favorites.length > 0 && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-primary/20 text-primary'}`}>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/20 text-primary'}`}>
                         {favorites.length}
                       </span>
                     )}
@@ -733,7 +733,7 @@ export function Songs() {
                           key={key}
                           onClick={() => setAssetsView(key)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold transition-colors ${
-                            assetsView === key ? 'bg-[var(--primary)] text-white' : 'bg-muted text-muted-foreground'
+                            assetsView === key ? 'bg-[var(--primary)] text-primary-foreground' : 'bg-muted text-muted-foreground'
                           }`}
                         >
                           <Icon size={12} /> {label}
@@ -750,7 +750,7 @@ export function Songs() {
                           <p className="text-foreground font-sans text-sm font-semibold">No saved songs yet</p>
                           <p className="text-muted-foreground font-sans text-xs text-center px-6">Tap the ♥ on any trending song to save it here</p>
                           <motion.button whileTap={{ scale: 0.96 }} onClick={() => setActiveTab('trending')}
-                            className="mt-2 px-5 py-2.5 bg-[var(--primary)] text-white rounded-full font-sans text-sm font-semibold">
+                            className="mt-2 px-5 py-2.5 bg-[var(--primary)] text-primary-foreground rounded-full font-sans text-sm font-semibold">
                             Browse Music
                           </motion.button>
                         </div>
@@ -1171,10 +1171,10 @@ function SongCard({
         }
         <div className="absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full bg-[var(--primary)]/90 flex items-center justify-center shadow-md">
           {isLoading
-            ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
             : isPlaying
-              ? <Pause size={13} className="text-white" fill="white" />
-              : <Play size={13} className="text-white ml-0.5" fill="white" />
+              ? <Pause size={13} className="text-primary-foreground" fill="currentColor" />
+              : <Play size={13} className="text-primary-foreground ml-0.5" fill="currentColor" />
           }
         </div>
       </div>
@@ -1246,10 +1246,10 @@ function SongRow({
         <motion.button whileTap={{ scale: 0.88 }} onClick={onPlay}
           className="w-9 h-9 rounded-full bg-[var(--primary)] flex items-center justify-center shadow-md">
           {isLoading
-            ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
             : isPlaying
-              ? <Pause size={14} className="text-white" fill="white" />
-              : <Play size={14} className="text-white ml-0.5" fill="white" />
+              ? <Pause size={14} className="text-primary-foreground" fill="currentColor" />
+              : <Play size={14} className="text-primary-foreground ml-0.5" fill="currentColor" />
           }
         </motion.button>
       </div>
