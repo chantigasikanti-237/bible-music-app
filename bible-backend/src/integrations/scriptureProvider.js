@@ -11,25 +11,6 @@ const { findBookMetadataById } = require("../utils/bookMetadata");
 const { buildPassageId } = require("../utils/passage");
 
 const YOUVERSION_BASE_URL = "https://api.youversion.com/v1";
-const PUBLIC_PAGE_PREFERRED_BIBLE_IDS = new Set([
-  111,   // English KJV
-  339,   // Tamil OV BSI
-  722,   // Sindhi Common Language NT
-  155,   // Bengali (Pobitro Baibel)
-  1681,  // Bengali OV BSI
-  1683,  // Hindi OV BSI
-  1684,  // Kannada JV BSI
-  1686,  // Marathi RV BSI
-  1690,  // Bengali CL BSI
-  1692,  // Kannada CL BSI
-  1693,  // Malayalam OV BSI
-  1711,  // Nepali Saral
-  1787,  // Telugu OV BSI
-  1866,  // Konkani/Goan NT BSI
-  1883,  // Bengali IRV
-  1884,  // Punjabi IRV
-  1979,  // Assamese IRV 2019
-]);
 const AUDIO_BIBLE_ID_BY_TEXT_BIBLE_ID = new Map([
   [111, 111],
   [339, 339],
@@ -228,30 +209,31 @@ const fetchChapterFromApi = async ({
       sourceType: "provider",
       sourceProvider: "youversion-api",
     });
-  } catch (error) {
-    if (error.response && [401, 403].includes(error.response.status)) {
-      throw new AppError(502, "YouVersion API rejected the request", {
-        upstreamStatus: error.response.status,
-      });
-    }
+  } catch (_) {
+    // Covers a bad/missing key same as any other API failure - now that this
+    // runs first for every version instead of as a last resort, throwing
+    // here would skip the bible.com fallback entirely for whichever
+    // translations the key doesn't happen to cover.
     return null;
   }
 };
 
 const createScriptureProvider = () => ({
+  // The licensed YouVersion API is the real, supported access path (see the
+  // account's active Bible Licensing agreements) - tried first for every
+  // version. Scraping bible.com's public page is a fallback only, for
+  // whatever the API doesn't happen to return (or has no key for), not the
+  // default: unlike the API, a scrape is subject to bible.com rate-limiting/
+  // blocking specific requester IPs, which doesn't discriminate by license.
   async fetchChapter({ versionId, bookId, chapterNumber, passageId }) {
-    const preferPublicPage = PUBLIC_PAGE_PREFERRED_BIBLE_IDS.has(versionId);
-
-    if (!preferPublicPage) {
-      const apiChapter = await fetchChapterFromApi({
-        versionId,
-        bookId,
-        chapterNumber,
-        passageId,
-      });
-      if (apiChapter) {
-        return apiChapter;
-      }
+    const apiChapter = await fetchChapterFromApi({
+      versionId,
+      bookId,
+      chapterNumber,
+      passageId,
+    });
+    if (apiChapter) {
+      return apiChapter;
     }
 
     const publicChapter = await fetchChapterFromPublicPage({
@@ -262,18 +244,6 @@ const createScriptureProvider = () => ({
     });
     if (publicChapter) {
       return publicChapter;
-    }
-
-    if (preferPublicPage) {
-      const apiChapter = await fetchChapterFromApi({
-        versionId,
-        bookId,
-        chapterNumber,
-        passageId,
-      });
-      if (apiChapter) {
-        return apiChapter;
-      }
     }
 
     throw new AppError(502, "Failed to fetch scripture content from providers");
