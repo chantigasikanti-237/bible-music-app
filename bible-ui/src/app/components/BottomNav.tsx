@@ -179,6 +179,7 @@ export function BottomNav() {
   const [activeTab, setActiveTab] = useState('home');
   const [playerOpen, setPlayerOpen] = useState(false);
   const [songPlaying, setSongPlaying] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
 
   useEffect(() => {
     const matched = navItems.find(item =>
@@ -199,6 +200,12 @@ export function BottomNav() {
     return () => window.removeEventListener('player-playing', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: Event) => setSearchExpanded((e as CustomEvent<boolean>).detail);
+    window.addEventListener('search-expanded', handler);
+    return () => window.removeEventListener('search-expanded', handler);
+  }, []);
+
   // The pill nav only makes sense on a tab's root screen — any deeper route
   // (Bible chapter/reading, Profile sub-pages, playlist detail, etc.) is a
   // "sub screen" and should hide it, same as the expanded music player does.
@@ -211,9 +218,9 @@ export function BottomNav() {
       {!isSubScreen && (
         <motion.div
           className="md:hidden fixed bottom-6 left-4 right-4 z-50 pointer-events-none"
-          animate={{ y: playerOpen ? 120 : 0, opacity: playerOpen ? 0 : 1 }}
+          animate={{ y: playerOpen || searchExpanded ? 120 : 0, opacity: playerOpen || searchExpanded ? 0 : 1 }}
           transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-          style={{ pointerEvents: playerOpen ? 'none' : undefined }}
+          style={{ pointerEvents: playerOpen || searchExpanded ? 'none' : undefined }}
         >
           <nav className="max-w-md mx-auto bg-[#F6F1E7] dark:bg-card border border-[var(--primary)]/10 shadow-[0_8px_32px_rgba(44,44,44,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl rounded-[2rem] px-2 py-2 pointer-events-auto flex items-center justify-around">
             {mobileNavItems.map((item) => {

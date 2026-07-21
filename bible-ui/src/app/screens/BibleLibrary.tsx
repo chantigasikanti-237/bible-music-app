@@ -172,6 +172,8 @@ export function BibleLibrary() {
             placeholder="Search books..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: true }))}
+            onBlur={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: false }))}
             className="w-full bg-card rounded-2xl pl-12 pr-4 py-3.5 text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm transition-all font-sans text-base"
           />
         </div>

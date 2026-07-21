@@ -290,6 +290,8 @@ export function SongsBook({ isOpen, onClose, standalone = false, openHymn = null
                       placeholder="Search songs..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
+                      onFocus={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: true }))}
+                      onBlur={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: false }))}
                       className="w-full bg-white border border-[var(--primary)]/10 shadow-sm rounded-2xl py-3.5 pl-12 pr-4 text-[#2c2c2c] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B8DEF]/30 transition-shadow"
                     />
                   </div>

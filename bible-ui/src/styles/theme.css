@@ -32,6 +32,7 @@
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
   --border: rgba(44, 44, 44, 0.12);
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
   --input: transparent;
   --input-background: #ffffff;
   --switch-background: #4a4a4a;
@@ -57,9 +58,9 @@
 .dark {
   --background: #1A1A1A; /* Neutral charcoal, no green tint */
   --foreground: #F6F1E7; /* Scripture Cream */
-  --card: #242424; /* Dark Surface */
+  --card: #2B2B2B; /* Dark Surface - a real step up from the page background, not a near-match */
   --card-foreground: #F6F1E7;
-  --popover: #242424;
+  --popover: #2B2B2B;
   --popover-foreground: #F6F1E7;
   --primary: #B8B8B8; /* Light grey - replaces Olive Sage green */
   --primary-foreground: #1A1A1A;
@@ -72,6 +73,11 @@
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: rgba(246, 241, 231, 0.15);
+  /* A drop shadow alone is invisible against a near-black background - this
+     pairs a faint top highlight (light catching the card's raised edge)
+     with a soft dark shadow, the standard way to fake elevation once
+     lightness alone can't carry it. */
+  --card-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 4px 20px rgba(0,0,0,0.4);
   --input: rgba(246, 241, 231, 0.1);
   --ring: #B8B8B8;
   --font-weight-medium: 500;

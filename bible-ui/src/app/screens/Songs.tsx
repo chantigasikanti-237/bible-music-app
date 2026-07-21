@@ -528,6 +528,8 @@ export function Songs() {
             placeholder="Search songs, artists..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            onFocus={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: true }))}
+            onBlur={() => window.dispatchEvent(new CustomEvent('search-expanded', { detail: false }))}
             className={`w-full bg-card rounded-2xl pl-11 py-3 text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-sans text-sm ${
               isVoiceSearchSupported() ? (searchQuery ? 'pr-20' : 'pr-11') : 'pr-10'
             }`}

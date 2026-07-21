@@ -194,6 +194,14 @@ export function Home() {
     setSearchQuery('');
   };
 
+  // Same mechanism BottomNav already uses to hide itself while the music
+  // player is expanded - the keyboard opening for this search box otherwise
+  // leaves the nav pill floating awkwardly mid-content instead of off-screen.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('search-expanded', { detail: showSearch }));
+    return () => window.dispatchEvent(new CustomEvent('search-expanded', { detail: false }));
+  }, [showSearch]);
+
   // "Hi {Full Name}" replaces the time-based greeting once we know who's
   // signed in — falls back to the greeting for guests / while this hasn't
   // resolved yet, rather than a blank header.
@@ -359,7 +367,7 @@ export function Home() {
   const cardStyle = {
     background: 'var(--card)',
     border: '1px solid var(--border)',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    boxShadow: 'var(--card-shadow)',
   } as React.CSSProperties;
 
   // Quote carousel
@@ -417,7 +425,7 @@ export function Home() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Escape') closeSearch(); }}
                 placeholder="Search Bible books…"
-                className={`w-full bg-white border border-[var(--primary)]/10 rounded-2xl pl-11 pr-11 py-3 font-sans text-sm ${textPrimary} placeholder:${textMuted} shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20`}
+                className={`w-full bg-white dark:bg-card border border-[var(--primary)]/10 rounded-2xl pl-11 pr-11 py-3 font-sans text-sm ${textPrimary} placeholder:${textMuted} shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20`}
               />
               <button
                 onClick={closeSearch}
@@ -427,7 +435,7 @@ export function Home() {
               </button>
 
               {searchQuery.trim() && (
-                <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl border border-[var(--primary)]/10 shadow-lg overflow-hidden z-20 max-h-[65vh] overflow-y-auto scrollbar-hide">
+                <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-card rounded-2xl border border-[var(--primary)]/10 shadow-lg overflow-hidden z-20 max-h-[65vh] overflow-y-auto scrollbar-hide">
                   {!hasAnySearchResults && (
                     <p className={`px-4 py-3 text-sm ${textMuted}`}>No results for "{searchQuery}"</p>
                   )}
@@ -440,7 +448,7 @@ export function Home() {
                           state: parsedReference.verse ? { verseNumber: parsedReference.verse } : undefined,
                         });
                       }}
-                      className="w-full text-left px-4 py-3 font-sans text-sm hover:bg-[var(--primary)]/8 transition-colors bg-[var(--primary)]/5 border-b border-[var(--primary)]/10"
+                      className="w-full text-left px-4 py-3 font-sans text-sm hover:bg-[var(--primary)]/8 transition-colors bg-[var(--primary)]/5 dark:bg-white/5 border-b border-[var(--primary)]/10"
                     >
                       <span className={`font-semibold ${textPrimary}`}>
                         {parsedReference.book.title} {parsedReference.chapter}
@@ -565,7 +573,7 @@ export function Home() {
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={openSearch}
-                className="w-11 h-11 rounded-full bg-white border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-white dark:bg-card border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
               >
                 <Search size={19} className="text-[var(--primary)]" />
               </motion.button>
@@ -574,7 +582,7 @@ export function Home() {
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={() => navigate('/hymns')}
-                className="md:hidden flex-shrink-0 w-11 h-11 rounded-full bg-white border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
+                className="md:hidden flex-shrink-0 w-11 h-11 rounded-full bg-white dark:bg-card border border-[var(--primary)]/10 shadow-sm flex items-center justify-center"
               >
                 <Music2 size={19} className="text-[var(--primary)]" strokeWidth={1.7} />
               </motion.button>
@@ -594,7 +602,7 @@ export function Home() {
           />
           <div className="relative z-10 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${'bg-[var(--primary)]/10'}`}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--primary)]/10 dark:bg-white/10">
                 <BookMarked size={20} className={'text-[var(--primary)]'} />
               </div>
               <div>
@@ -609,7 +617,7 @@ export function Home() {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/bible/JHN/3')}
-              className={`w-full py-3 rounded-2xl font-sans font-semibold text-sm transition-all ${'bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/18'}`}
+              className="w-full py-3 rounded-2xl font-sans font-semibold text-sm transition-all bg-[var(--primary)]/10 dark:bg-white/10 text-[var(--primary)] hover:bg-[var(--primary)]/18 dark:hover:bg-white/15"
             >
               Read Chapter
             </motion.button>
@@ -660,11 +668,11 @@ export function Home() {
               <p className={`text-[10px] font-bold uppercase tracking-widest ${textMuted}`}>Daily Plan</p>
               <h3 className={`font-serif font-semibold text-[15px] mt-0.5 ${textPrimary}`}>30-Day New Testament</h3>
             </div>
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${'bg-[var(--primary)]/10 text-[var(--primary)]'}`}>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--primary)]/10 dark:bg-white/10 text-[var(--primary)]">
               Day {STREAK}
             </span>
           </div>
-          <div className={`w-full h-2 rounded-full overflow-hidden ${'bg-[var(--primary)]/10'}`}>
+          <div className="w-full h-2 rounded-full overflow-hidden bg-[var(--primary)]/10 dark:bg-white/10">
             <motion.div
               className="h-full rounded-full"
               style={{ background: 'var(--primary)' }}
@@ -720,7 +728,7 @@ export function Home() {
               className="flex flex-col items-center justify-center p-4 rounded-2xl"
               style={cardStyle}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${'bg-[var(--primary)]/10'}`}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-[var(--primary)]/10 dark:bg-white/10">
                 <Icon size={22} className={'text-[var(--primary)]'} />
               </div>
               <p className={`font-semibold font-sans text-sm mb-0.5 ${textPrimary}`}>{label}</p>
