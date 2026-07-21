@@ -389,14 +389,14 @@ export function Login() {
           </motion.button>
         </form>
 
-        {/* Guest access */}
+        {/* Back */}
         {(mode === 'login' || mode === 'register') && (
         <div className="mt-4 text-center">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)}
             className="text-muted-foreground font-sans text-sm hover:text-foreground transition-colors"
           >
-            Continue as guest
+            Back
           </button>
         </div>
         )}
