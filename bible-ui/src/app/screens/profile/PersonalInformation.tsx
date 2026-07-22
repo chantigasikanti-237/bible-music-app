@@ -115,12 +115,12 @@ export function PersonalInformation() {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-full bg-primary/10 border-4 border-primary/20 overflow-hidden flex items-center justify-center shadow-md relative group"
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border-4 border-accent/30 overflow-hidden flex items-center justify-center shadow-md relative group"
               >
                 {photoPreview ? (
                   <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={40} className="text-primary" />
+                  <User size={40} className="text-accent" />
                 )}
                 {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
@@ -128,11 +128,14 @@ export function PersonalInformation() {
                 </div>
               </motion.button>
 
-              {/* Camera badge */}
+              {/* Camera badge — bg-accent (muted gold) rather than bg-primary:
+                  --accent is the same warm gold in both light and dark themes,
+                  so this stays a deliberate premium touch instead of flipping
+                  to a flat light-grey blob against the dark background. */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-background"
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center shadow-lg border-2 border-background"
               >
                 <Camera size={14} />
               </motion.button>

@@ -116,26 +116,33 @@ export function Profile() {
 
   return (
     <PageContainer className="p-0 pb-24">
-      {/* Profile Header */}
-      <div className="bg-primary px-4 pt-12 pb-8 rounded-b-[32px] shadow-lg">
+      {/* Profile Header — a fixed forest-green gradient with its own white
+          text contrast, matching the Home hero card. This intentionally
+          does not use bg-primary/text-primary-foreground: in dark mode
+          --primary is a neutral light grey (built for small buttons/toggles),
+          which read as a stray white card when used as a full-bleed hero. */}
+      <div
+        className="px-4 pt-12 pb-8 rounded-b-[32px] shadow-lg"
+        style={{ background: 'linear-gradient(160deg, #1b4332 0%, #163A2D 55%, #0a1f14 100%)' }}
+      >
         <div className="flex flex-col items-center">
           {/* Avatar */}
           <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-xl border-4 border-white/20 flex items-center justify-center mb-4 shadow-xl">
-            <User size={40} className="text-primary-foreground" />
+            <User size={40} className="text-white" />
           </div>
 
-          <Heading2 className="text-primary-foreground mb-1">
+          <Heading2 className="text-white mb-1">
             {displayName}
           </Heading2>
           {displayEmail ? (
-            <Text className="text-primary-foreground/80">
+            <Text className="text-white/80">
               {displayEmail}
             </Text>
           ) : (
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/login')}
-              className="text-primary-foreground/80 underline font-sans text-sm mt-1"
+              className="text-white/80 underline font-sans text-sm mt-1"
             >
               Sign in
             </motion.button>
@@ -144,18 +151,18 @@ export function Profile() {
           {/* Stats */}
           <div className="flex gap-6 mt-6 w-full justify-center">
             <div className="text-center">
-              <div className="text-primary-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-primary-foreground/70 font-sans text-xs uppercase tracking-wider">Day Streak</div>
+              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Day Streak</div>
             </div>
             <div className="w-px bg-white/20" />
             <div className="text-center">
-              <div className="text-primary-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-primary-foreground/70 font-sans text-xs uppercase tracking-wider">Chapters</div>
+              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Chapters</div>
             </div>
             <div className="w-px bg-white/20" />
             <div className="text-center">
-              <div className="text-primary-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-primary-foreground/70 font-sans text-xs uppercase tracking-wider">Bookmarks</div>
+              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Bookmarks</div>
             </div>
           </div>
         </div>
