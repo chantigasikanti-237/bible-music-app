@@ -13,12 +13,6 @@ const { buildPassageId } = require("../utils/passage");
 const YOUVERSION_BASE_URL = "https://api.youversion.com/v1";
 const AUDIO_BIBLE_ID_BY_TEXT_BIBLE_ID = new Map([
   [111, 111],
-  [339, 339],
-  [1683, 1683],
-  [1684, 1898],
-  [1686, 1686],
-  [1693, 1693],
-  [1787, 1787],
 ]);
 
 const buildPublicPageHeaders = () => ({

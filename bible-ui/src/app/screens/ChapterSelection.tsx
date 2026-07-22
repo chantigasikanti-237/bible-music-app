@@ -12,8 +12,8 @@ interface ChapterMeta {
 }
 
 const VERSION_LANG: Record<number, string> = {
-  111: 'en', 1787: 'te', 1683: 'hi', 339: 'ta', 1693: 'ml',
-  1684: 'kn', 1692: 'kn', 1686: 'mr', 1884: 'pa', 1979: 'as',
+  111: 'en', 1895: 'te', 1980: 'hi', 1899: 'ta', 1912: 'ml',
+  1898: 'kn', 1692: 'kn', 1910: 'mr', 1884: 'pa', 1979: 'as',
   155: 'bn', 1681: 'bn', 1690: 'bn', 1883: 'bn', 1711: 'ne',
   722: 'sd', 1866: 'kok',
 };
