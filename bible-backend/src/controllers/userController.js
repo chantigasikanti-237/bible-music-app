@@ -4,12 +4,14 @@ const { authService } = require("../services/authService");
 const { userRepository } = require("../repositories/userRepository");
 const AppError = require("../utils/AppError");
 
+const ALLOWED_PHOTO_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB — matches client-side validation
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new AppError(400, "Only image files allowed"));
+    if (!ALLOWED_PHOTO_MIME_TYPES.includes(file.mimetype)) {
+      return cb(new AppError(400, "Only PNG, JPG, and WEBP images are allowed"));
     }
     cb(null, true);
   },

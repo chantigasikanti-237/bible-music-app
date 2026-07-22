@@ -45,6 +45,7 @@ const toPublicUser = (user) => ({
   id: String(user._id || user.id),
   name: user.name || null,
   email: user.email,
+  photo: user.photo || null,
   roles: Array.isArray(user.roles) ? user.roles : ["user"],
   status: user.status || "active",
   preferences: user.preferences || {
