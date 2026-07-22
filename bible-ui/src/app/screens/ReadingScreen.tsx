@@ -48,6 +48,7 @@ export function ReadingScreen() {
   const [bookName, setBookName] = useState(book || '');
   const [chapterCount, setChapterCount] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [showNoAudioNotice, setShowNoAudioNotice] = useState(false);
   const [loading, setLoading] = useState(true);
   const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
   const [fontSize, setFontSize] = useState(18);
@@ -227,7 +228,11 @@ export function ReadingScreen() {
   }, [book, chapter, versionId]);
 
   const toggleAudio = () => {
-    if (!audioUrl) return;
+    if (!audioUrl) {
+      setShowNoAudioNotice(true);
+      setTimeout(() => setShowNoAudioNotice(false), 2500);
+      return;
+    }
     if (!audioRef.current) {
       audioRef.current = new Audio(audioUrl);
       audioRef.current.onended = () => setIsPlaying(false);
@@ -324,17 +329,28 @@ export function ReadingScreen() {
         title={`${bookName} ${chapter}`}
         onBack={() => navigate(-1)}
         rightAction={
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 relative">
+            <AnimatePresence>
+              {showNoAudioNotice && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute top-11 right-0 z-10 bg-foreground text-background text-xs font-sans font-medium px-3 py-2 rounded-xl shadow-lg whitespace-nowrap"
+                >
+                  Audio not available for this chapter
+                </motion.div>
+              )}
+            </AnimatePresence>
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={toggleAudio}
-              disabled={!audioUrl}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
                 isPlaying
                   ? 'bg-primary text-primary-foreground'
                   : audioUrl
                   ? 'bg-muted text-primary'
-                  : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
+                  : 'bg-muted text-muted-foreground opacity-40'
               }`}
             >
               {isPlaying ? <VolumeX size={16} /> : <Volume2 size={16} />}
