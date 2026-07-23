@@ -16,7 +16,14 @@ interface UserProfile {
   preferences: { bibleLanguage: string; songsLanguage: string };
 }
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
+// This gates the raw photo picked from camera/library, before cropping —
+// not what actually gets uploaded. Modern phone photos commonly run
+// 3-15MB, so a low cap here would reject normal photos before the user
+// ever reaches the crop screen. The crop step always compresses the final
+// output down to a small fixed-size JPEG regardless of source size, so
+// the server-side upload limit (5MB, in userController.js) is untouched —
+// that's plenty for the actual compressed payload.
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024; // 20MB
 const ALLOWED_PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 export function PersonalInformation() {
@@ -59,7 +66,7 @@ export function PersonalInformation() {
       return;
     }
     if (file.size > MAX_PHOTO_BYTES) {
-      setError('Image must be smaller than 5MB');
+      setError('Image must be smaller than 20MB');
       return;
     }
 
