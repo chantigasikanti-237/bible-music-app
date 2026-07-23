@@ -15,6 +15,21 @@ interface UserProfile {
   emailVerifiedAt: string | null;
 }
 
+// Consecutive-day streak ending today (or ending yesterday if today has no
+// reading yet — same "not broken until the day is over" behavior common to
+// streak features elsewhere, e.g. Duolingo).
+const computeStreak = (readAtTimestamps: string[]): number => {
+  const days = new Set(readAtTimestamps.map(t => new Date(t).toDateString()));
+  const cursor = new Date();
+  if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(cursor.toDateString())) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+};
+
 const settingsGroups = [
   {
     title: 'Account',
@@ -55,6 +70,7 @@ export function Profile() {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState<{ streak: number; chapters: number; bookmarks: number } | null>(null);
 
   const [showVerifySheet, setShowVerifySheet] = useState(false);
   const [verifyOtp, setVerifyOtp] = useState('');
@@ -71,6 +87,27 @@ export function Profile() {
           setUser(res.data);
           setSharedProfile(res.data);
         }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Chapters = distinct chapters ever read (one history row per chapter,
+  // capped at the API's 100-item page limit). Day Streak is derived from
+  // the same history rows' lastReadAt timestamps rather than a separate
+  // endpoint, since none exists.
+  useEffect(() => {
+    if (!getToken()) return;
+    Promise.all([
+      apiFetch<{ success: boolean; data: { lastReadAt: string }[] }>('/api/v1/users/me/history?limit=100'),
+      apiFetch<{ success: boolean; data: unknown[] }>('/api/v1/users/me/bookmarks?limit=100'),
+    ])
+      .then(([historyRes, bookmarksRes]) => {
+        const historyItems = historyRes.success ? historyRes.data : [];
+        setStats({
+          streak: computeStreak(historyItems.map(h => h.lastReadAt)),
+          chapters: historyItems.length,
+          bookmarks: bookmarksRes.success ? bookmarksRes.data.length : 0,
+        });
       })
       .catch(() => {});
   }, []);
@@ -131,13 +168,13 @@ export function Profile() {
           which is what avoids the overlap a full-width justify-between
           row had at common desktop widths. */}
       <div className="px-4 pt-12 pb-8 md:px-8">
-        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-center md:gap-6 md:max-w-2xl md:mx-auto">
+        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-center md:gap-6 md:max-w-2xl md:mx-auto md:-translate-x-16">
           {/* Avatar */}
-          <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/30 overflow-hidden flex items-center justify-center mb-3 md:mb-0 md:flex-shrink-0 shadow-md">
+          <div className="w-24 h-24 md:w-48 md:h-48 rounded-full bg-accent/10 border-4 border-accent/30 overflow-hidden flex items-center justify-center mb-3 md:mb-0 md:flex-shrink-0 shadow-md">
             {user?.photo ? (
               <img src={user.photo} alt={displayName} className="w-full h-full object-cover" />
             ) : (
-              <User size={40} className="text-accent" />
+              <User className="w-10 h-10 md:w-20 md:h-20 text-accent" />
             )}
           </div>
 
@@ -163,17 +200,17 @@ export function Profile() {
             {/* Stats */}
             <div className="flex gap-6 mt-6 justify-center">
               <div className="text-center">
-                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">{stats ? stats.streak : '—'}</div>
                 <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Day Streak</div>
               </div>
               <div className="w-px bg-border" />
               <div className="text-center">
-                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">{stats ? stats.chapters : '—'}</div>
                 <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Chapters</div>
               </div>
               <div className="w-px bg-border" />
               <div className="text-center">
-                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">{stats ? stats.bookmarks : '—'}</div>
                 <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Bookmarks</div>
               </div>
             </div>
