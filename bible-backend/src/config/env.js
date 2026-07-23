@@ -77,6 +77,7 @@ const config = Object.freeze({
     parseInteger(process.env.EMAIL_VERIFICATION_TTL_MINUTES, 60) * 60 * 1000,
   bcryptSaltRounds: parseInteger(process.env.BCRYPT_SALT_ROUNDS, 12),
   youVersionAppKey: String(process.env.YOUVERSION_APP_KEY || "").trim(),
+  bibleBrainApiKey: String(process.env.BIBLE_BRAIN_API_KEY || "").trim() || null,
   // Routes yt-dlp's YouTube requests (search + audio-URL extraction) through
   // a proxy — needed because YouTube blocks/rate-limits known datacenter IP
   // ranges (Render included), which a residential/rotating proxy avoids.

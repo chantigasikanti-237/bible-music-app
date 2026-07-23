@@ -2,6 +2,7 @@ const AppError = require("../utils/AppError");
 const { bibleChapterRepository } = require("../repositories/bibleChapterRepository");
 const { bibleVerseRepository } = require("../repositories/bibleVerseRepository");
 const { scriptureProvider } = require("../integrations/scriptureProvider");
+const { resolveBibleBrainAudioUrl } = require("../integrations/bibleBrainAudio");
 const { chapterCacheService } = require("./chapterCacheService");
 const {
   getBookMetadataList,
@@ -34,6 +35,24 @@ const mapChapterResponse = (chapter) => ({
   createdAt: chapter.createdAt || null,
   updatedAt: chapter.updatedAt || null,
 });
+
+// Bible Brain's audio URLs are signed and expire in ~14-24h - far shorter
+// than the chapter text, which is cached in Mongo forever. So this is never
+// persisted to Mongo; it only overrides the in-memory response right before
+// it goes into the short-lived (1h default) Redis chapter cache, which
+// re-resolves a fresh URL on every miss - safely inside the signed URL's
+// validity window. Falls back to whatever audio the chapter already has
+// (e.g. bible.com scrape, or null) when this version/chapter isn't covered.
+const applyBibleBrainAudio = async (normalizedChapter, cacheKey) => {
+  const resolved = await resolveBibleBrainAudioUrl(cacheKey);
+  if (resolved) {
+    normalizedChapter.audio = {
+      provider: resolved.provider,
+      url: resolved.url,
+      storageKey: null,
+    };
+  }
+};
 
 const createBibleContentService = ({
   chapterRepo = bibleChapterRepository,
@@ -68,6 +87,7 @@ const createBibleContentService = ({
     const storedChapter = await chapterRepo.findChapter(cacheKey);
     if (storedChapter) {
       const normalizedChapter = mapChapterResponse(storedChapter);
+      await applyBibleBrainAudio(normalizedChapter, cacheKey);
       await chapterCache.setChapter(cacheKey, normalizedChapter);
       return normalizedChapter;
     }
@@ -82,6 +102,7 @@ const createBibleContentService = ({
     await verseRepo.replaceChapterVerses(providerChapter);
 
     const normalizedChapter = mapChapterResponse(savedChapter);
+    await applyBibleBrainAudio(normalizedChapter, cacheKey);
     await chapterCache.setChapter(cacheKey, normalizedChapter);
     return normalizedChapter;
   },
