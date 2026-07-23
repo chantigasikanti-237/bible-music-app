@@ -125,57 +125,57 @@ export function Profile() {
       {/* Profile Header — no card container; sits directly on the page
           background (bg-background, from PageContainer) so it reads as
           one continuous surface rather than a boxed panel.
-          Mobile: stacked and centered (unchanged). md+ (the same
-          breakpoint BottomNav/sidebar already switch on): Instagram-style
-          row — avatar/name/sign-in on the left, stats on the right. */}
-      <div className="px-4 pt-12 pb-8 md:px-8 md:pt-10 md:pb-10">
-        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between md:max-w-3xl md:mx-auto">
-          {/* Left: avatar + name + sign-in */}
-          <div className="flex flex-col items-center md:flex-row md:items-center md:gap-5">
-            {/* Avatar */}
-            <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/30 overflow-hidden flex items-center justify-center mb-4 md:mb-0 shadow-md">
-              {user?.photo ? (
-                <img src={user.photo} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <User size={40} className="text-accent" />
-              )}
-            </div>
-
-            <div className="flex flex-col items-center md:items-start">
-              <Heading2 className="text-foreground mb-1">
-                {displayName}
-              </Heading2>
-              {displayEmail ? (
-                <Text className="text-muted-foreground">
-                  {displayEmail}
-                </Text>
-              ) : (
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate('/login')}
-                  className="text-accent underline font-sans text-sm mt-1"
-                >
-                  Sign in
-                </motion.button>
-              )}
-            </div>
+          Mobile: stacked and centered. md+: avatar fixed on the left,
+          name/email/stats grouped as one compact block beside it — the
+          whole group is centered as a unit (not stretched edge-to-edge),
+          which is what avoids the overlap a full-width justify-between
+          row had at common desktop widths. */}
+      <div className="px-4 pt-12 pb-8 md:px-8">
+        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-center md:gap-6 md:max-w-2xl md:mx-auto">
+          {/* Avatar */}
+          <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/30 overflow-hidden flex items-center justify-center mb-3 md:mb-0 md:flex-shrink-0 shadow-md">
+            {user?.photo ? (
+              <img src={user.photo} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <User size={40} className="text-accent" />
+            )}
           </div>
 
-          {/* Right (md+) / below (mobile): Stats */}
-          <div className="flex gap-6 mt-6 w-full justify-center md:mt-0 md:w-auto md:justify-end">
-            <div className="text-center">
-              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Day Streak</div>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Chapters</div>
-            </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Bookmarks</div>
+          {/* Name/email + stats — grouped together beside the avatar on desktop */}
+          <div className="flex flex-col items-center">
+            <Heading2 className="text-foreground mb-1 text-center">
+              {displayName}
+            </Heading2>
+            {displayEmail ? (
+              <Text className="text-muted-foreground text-center">
+                {displayEmail}
+              </Text>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate('/login')}
+                className="text-accent underline font-sans text-sm mt-1"
+              >
+                Sign in
+              </motion.button>
+            )}
+
+            {/* Stats */}
+            <div className="flex gap-6 mt-6 justify-center">
+              <div className="text-center">
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Day Streak</div>
+              </div>
+              <div className="w-px bg-border" />
+              <div className="text-center">
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Chapters</div>
+              </div>
+              <div className="w-px bg-border" />
+              <div className="text-center">
+                <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+                <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Bookmarks</div>
+              </div>
             </div>
           </div>
         </div>
