@@ -39,11 +39,28 @@ export const BIBLE_VERSIONS = [
   { id: 1866, lang: 'kok',label: 'Konkani (कोंकणी)',       sublabel: 'Konkani/Goan NT BSI',        flag: '🇮🇳' },
 ];
 
-const canonLabel = (canon: string) => {
-  if (canon === 'OT') return 'Old Testament';
-  if (canon === 'NT') return 'New Testament';
-  return canon;
+// "Old Testament" / "New Testament" are theological terms with standard,
+// well-established translations — shown in the currently selected Bible
+// language rather than left in English while the book names around them
+// are already localized.
+const TESTAMENT_LABELS: Record<string, { all: string; OT: string; NT: string }> = {
+  en:  { all: 'All',      OT: 'Old Testament',      NT: 'New Testament' },
+  te:  { all: 'అన్నీ',     OT: 'పాత నిబంధన',         NT: 'కొత్త నిబంధన' },
+  hi:  { all: 'सभी',       OT: 'पुराना नियम',        NT: 'नया नियम' },
+  ta:  { all: 'அனைத்தும்', OT: 'பழைய ஏற்பாடு',       NT: 'புதிய ஏற்பாடு' },
+  ml:  { all: 'എല്ലാം',    OT: 'പഴയനിയമം',           NT: 'പുതിയനിയമം' },
+  kn:  { all: 'ಎಲ್ಲಾ',     OT: 'ಹಳೆಯ ಒಡಂಬಡಿಕೆ',      NT: 'ಹೊಸ ಒಡಂಬಡಿಕೆ' },
+  mr:  { all: 'सर्व',      OT: 'जुना करार',          NT: 'नवा करार' },
+  pa:  { all: 'ਸਭ',        OT: 'ਪੁਰਾਣਾ ਨੇਮ',          NT: 'ਨਵਾਂ ਨੇਮ' },
+  as:  { all: 'সকলো',      OT: 'পুৰণি নিয়ম',         NT: 'নতুন নিয়ম' },
+  bn:  { all: 'সব',        OT: 'পুরাতন নিয়ম',        NT: 'নতুন নিয়ম' },
+  ne:  { all: 'सबै',       OT: 'पुरानो नियम',        NT: 'नयाँ नियम' },
+  sd:  { all: 'سڀ',        OT: 'پراڻو عهدنامو',      NT: 'نئون عهدنامو' },
+  kok: { all: 'सगळें',     OT: 'जुनो करार',          NT: 'नवो करार' },
 };
+
+const testamentLabel = (key: 'all' | 'OT' | 'NT', lang: string) =>
+  (TESTAMENT_LABELS[lang] || TESTAMENT_LABELS.en)[key];
 
 export function BibleLibrary() {
   const navigate = useNavigate();
@@ -52,7 +69,7 @@ export function BibleLibrary() {
   const [books, setBooks] = useState<BibleBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTestament, setSelectedTestament] = useState<'All' | 'Old Testament' | 'New Testament'>('All');
+  const [selectedTestament, setSelectedTestament] = useState<'all' | 'OT' | 'NT'>('all');
 
   useEffect(() => {
     setLoading(true);
@@ -104,13 +121,12 @@ export function BibleLibrary() {
   };
 
   const filteredBooks = books.filter(book => {
-    const testament = canonLabel(book.canon);
     const q = searchQuery.toLowerCase();
     const matchesSearch =
       book.title.toLowerCase().includes(q) ||
       book.titleRomanized?.toLowerCase().includes(q) ||
       book.englishTitle?.toLowerCase().includes(q);
-    const matchesTestament = selectedTestament === 'All' || testament === selectedTestament;
+    const matchesTestament = selectedTestament === 'all' || book.canon === selectedTestament;
     return matchesSearch && matchesTestament;
   });
 
@@ -181,14 +197,14 @@ export function BibleLibrary() {
 
       {/* Filter Chips */}
       <div className="flex gap-3 px-4 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-        {(['All', 'Old Testament', 'New Testament'] as const).map((filter) => (
+        {(['all', 'OT', 'NT'] as const).map((filter) => (
           <Chip
             key={filter}
             active={selectedTestament === filter}
             onClick={() => setSelectedTestament(filter)}
             className="whitespace-nowrap"
           >
-            {filter}
+            {testamentLabel(filter, currentVersion.lang)}
           </Chip>
         ))}
       </div>
@@ -244,7 +260,7 @@ export function BibleLibrary() {
                     {book.title}
                   </h3>
                   <p className="text-muted-foreground font-sans text-sm">
-                    {book.chapterCount} chapters • {canonLabel(book.canon)}
+                    {book.chapterCount} chapters • {testamentLabel(book.canon === 'NT' ? 'NT' : 'OT', currentVersion.lang)}
                   </p>
                 </div>
               </div>

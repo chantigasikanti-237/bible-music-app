@@ -1,47 +1,38 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { User, Mail, Edit3, Check, Camera } from 'lucide-react';
-import { motion } from 'motion/react';
+import { User, Mail, Edit3, Check, Camera, Image as ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { PageContainer, AppBar } from '../../components/BibleSystem';
 import { apiFetch, getToken } from '../../lib/api';
+import { setProfile as setSharedProfile } from '../../lib/userProfileStore';
+import { PhotoCropSheet } from '../../components/PhotoCropSheet';
 
 interface UserProfile {
   id: string;
   name: string | null;
   email: string;
   photo: string | null;
+  emailVerifiedAt: string | null;
   preferences: { bibleLanguage: string; songsLanguage: string };
 }
 
-const resizeImageToDataUrl = (file: File, maxSize = 400): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.82));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 export function PersonalInformation() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [name, setName] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [croppedDataUrl, setCroppedDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [showSourceSheet, setShowSourceSheet] = useState(false);
+  const [cropSourceUrl, setCropSourceUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getToken()) { navigate('/login'); return; }
@@ -51,46 +42,79 @@ export function PersonalInformation() {
           setUser(res.data);
           setName(res.data.name || '');
           setPhotoPreview(res.data.photo || null);
+          setSharedProfile(res.data);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file next time
     if (!file) return;
-    try {
-      const resized = await resizeImageToDataUrl(file);
-      setPhotoPreview(resized);
-      setPhotoFile(file);
-    } catch {
-      setError('Could not process image');
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      setError('Only PNG, JPG, and WEBP images are allowed');
+      return;
     }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setError('Image must be smaller than 5MB');
+      return;
+    }
+
+    setError('');
+    setCropSourceUrl(URL.createObjectURL(file));
+  };
+
+  const handleCropCancel = () => {
+    if (cropSourceUrl) URL.revokeObjectURL(cropSourceUrl);
+    setCropSourceUrl(null);
+  };
+
+  const handleCropDone = (dataUrl: string) => {
+    if (cropSourceUrl) URL.revokeObjectURL(cropSourceUrl);
+    setCropSourceUrl(null);
+    setPhotoPreview(dataUrl);
+    setCroppedDataUrl(dataUrl);
   };
 
   const handleSave = async () => {
     setSaving(true); setError('');
     try {
+      // Both endpoints return the complete updated user (not just the
+      // changed field), so the shared store gets a full, authoritative
+      // replace each time — no partial-merge state to get out of sync.
+      let latestUser: UserProfile | null = null;
+
       // Upload photo if changed
-      if (photoFile) {
-        const resized = await resizeImageToDataUrl(photoFile);
-        const blob = await fetch(resized).then(r => r.blob());
+      if (croppedDataUrl) {
+        const blob = await fetch(croppedDataUrl).then(r => r.blob());
         const form = new FormData();
         form.append('photo', blob, 'photo.jpg');
         const token = getToken();
-        await fetch('/api/v1/users/me/photo', {
+        const photoRes = await fetch('/api/v1/users/me/photo', {
           method: 'POST',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: form,
-        }).then(r => r.json());
+        }).then(r => r.json()) as { success: boolean; data: UserProfile };
+        if (photoRes.success) latestUser = photoRes.data;
       }
       // Save name
       if (name.trim()) {
-        await apiFetch('/api/v1/users/me', { method: 'PATCH', body: JSON.stringify({ name: name.trim() }) });
+        const nameRes = await apiFetch<{ success: boolean; data: UserProfile }>('/api/v1/users/me', {
+          method: 'PATCH',
+          body: JSON.stringify({ name: name.trim() }),
+        });
+        if (nameRes.success) latestUser = nameRes.data;
+      }
+
+      if (latestUser) {
+        setUser(latestUser);
+        setSharedProfile(latestUser);
       }
       setSaved(true);
-      setPhotoFile(null);
+      setCroppedDataUrl(null);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
       setError(e.message || 'Failed to save');
@@ -114,8 +138,8 @@ export function PersonalInformation() {
             <div className="relative">
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border-4 border-accent/30 overflow-hidden flex items-center justify-center shadow-md relative group"
+                onClick={() => setShowSourceSheet(true)}
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border-4 border-accent/30 overflow-hidden flex items-center justify-center shadow-md relative group cursor-pointer"
               >
                 {photoPreview ? (
                   <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
@@ -134,8 +158,8 @@ export function PersonalInformation() {
                   to a flat light-grey blob against the dark background. */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center shadow-lg border-2 border-background"
+                onClick={() => setShowSourceSheet(true)}
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center shadow-lg border-2 border-background cursor-pointer"
               >
                 <Camera size={14} />
               </motion.button>
@@ -144,13 +168,21 @@ export function PersonalInformation() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              capture="user"
               className="hidden"
               onChange={handlePhotoSelect}
             />
 
             <p className="text-muted-foreground font-sans text-sm mt-3">
-              {photoFile ? 'New photo selected — tap Save to apply' : 'Tap photo to change'}
+              {croppedDataUrl ? 'New photo selected — tap Save to apply' : 'Tap photo to change'}
             </p>
           </div>
 
@@ -192,7 +224,7 @@ export function PersonalInformation() {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            disabled={saving || (!name.trim() && !photoFile)}
+            disabled={saving || (!name.trim() && !croppedDataUrl)}
             className="w-full bg-primary text-primary-foreground rounded-2xl py-4 font-sans font-semibold text-base shadow-md shadow-primary/20 disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? (
@@ -203,6 +235,64 @@ export function PersonalInformation() {
           </motion.button>
         </div>
       )}
+
+      {/* Choose Photo Source — Take Photo / Choose from Library / Cancel */}
+      <AnimatePresence>
+        {showSourceSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSourceSheet(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 bg-card rounded-t-[28px] z-50 shadow-2xl p-4 pb-8"
+            >
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
+              <h2 className="text-foreground font-semibold font-sans text-base text-center mb-4">Update Profile Photo</h2>
+              <div className="space-y-2">
+                <button
+                  onClick={() => { setShowSourceSheet(false); cameraInputRef.current?.click(); }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Camera size={18} className="text-accent" />
+                  </div>
+                  <span className="text-foreground font-sans text-sm font-medium">Take Photo</span>
+                </button>
+                <button
+                  onClick={() => { setShowSourceSheet(false); fileInputRef.current?.click(); }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <ImageIcon size={18} className="text-accent" />
+                  </div>
+                  <span className="text-foreground font-sans text-sm font-medium">Choose from Library</span>
+                </button>
+                <button
+                  onClick={() => setShowSourceSheet(false)}
+                  className="w-full text-center px-4 py-3.5 rounded-2xl bg-muted/50 hover:bg-muted transition-colors text-muted-foreground font-sans text-sm font-semibold cursor-pointer mt-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Crop — pan/zoom the selected photo before it's applied */}
+      <AnimatePresence>
+        {cropSourceUrl && (
+          <PhotoCropSheet imageUrl={cropSourceUrl} onCancel={handleCropCancel} onDone={handleCropDone} />
+        )}
+      </AnimatePresence>
     </PageContainer>
   );
 }

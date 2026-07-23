@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router';
 import { PageContainer, Heading2, Text, SettingsRow } from '../components/BibleSystem';
 import { apiFetch, clearToken, getToken } from '../lib/api';
 import { reportThemeToNativeShell } from '../lib/nativeTheme';
+import { setProfile as setSharedProfile, clearProfile } from '../lib/userProfileStore';
 
 interface UserProfile {
   id: string;
   name: string | null;
   email: string;
+  photo: string | null;
   emailVerifiedAt: string | null;
 }
 
@@ -65,13 +67,17 @@ export function Profile() {
     if (!getToken()) return;
     apiFetch<{ success: boolean; data: UserProfile }>('/api/v1/users/me')
       .then(res => {
-        if (res.success && res.data) setUser(res.data);
+        if (res.success && res.data) {
+          setUser(res.data);
+          setSharedProfile(res.data);
+        }
       })
       .catch(() => {});
   }, []);
 
   const handleSignOut = () => {
     clearToken();
+    clearProfile();
     navigate('/login');
   };
 
@@ -116,53 +122,60 @@ export function Profile() {
 
   return (
     <PageContainer className="p-0 pb-24">
-      {/* Profile Header — a fixed forest-green gradient with its own white
-          text contrast, matching the Home hero card. This intentionally
-          does not use bg-primary/text-primary-foreground: in dark mode
-          --primary is a neutral light grey (built for small buttons/toggles),
-          which read as a stray white card when used as a full-bleed hero. */}
-      <div
-        className="px-4 pt-12 pb-8 rounded-b-[32px] shadow-lg"
-        style={{ background: 'linear-gradient(160deg, #1b4332 0%, #163A2D 55%, #0a1f14 100%)' }}
-      >
-        <div className="flex flex-col items-center">
-          {/* Avatar */}
-          <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-xl border-4 border-white/20 flex items-center justify-center mb-4 shadow-xl">
-            <User size={40} className="text-white" />
+      {/* Profile Header — no card container; sits directly on the page
+          background (bg-background, from PageContainer) so it reads as
+          one continuous surface rather than a boxed panel.
+          Mobile: stacked and centered (unchanged). md+ (the same
+          breakpoint BottomNav/sidebar already switch on): Instagram-style
+          row — avatar/name/sign-in on the left, stats on the right. */}
+      <div className="px-4 pt-12 pb-8 md:px-8 md:pt-10 md:pb-10">
+        <div className="flex flex-col items-center md:flex-row md:items-center md:justify-between md:max-w-3xl md:mx-auto">
+          {/* Left: avatar + name + sign-in */}
+          <div className="flex flex-col items-center md:flex-row md:items-center md:gap-5">
+            {/* Avatar */}
+            <div className="w-24 h-24 rounded-full bg-accent/10 border-4 border-accent/30 overflow-hidden flex items-center justify-center mb-4 md:mb-0 shadow-md">
+              {user?.photo ? (
+                <img src={user.photo} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                <User size={40} className="text-accent" />
+              )}
+            </div>
+
+            <div className="flex flex-col items-center md:items-start">
+              <Heading2 className="text-foreground mb-1">
+                {displayName}
+              </Heading2>
+              {displayEmail ? (
+                <Text className="text-muted-foreground">
+                  {displayEmail}
+                </Text>
+              ) : (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => navigate('/login')}
+                  className="text-accent underline font-sans text-sm mt-1"
+                >
+                  Sign in
+                </motion.button>
+              )}
+            </div>
           </div>
 
-          <Heading2 className="text-white mb-1">
-            {displayName}
-          </Heading2>
-          {displayEmail ? (
-            <Text className="text-white/80">
-              {displayEmail}
-            </Text>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate('/login')}
-              className="text-white/80 underline font-sans text-sm mt-1"
-            >
-              Sign in
-            </motion.button>
-          )}
-
-          {/* Stats */}
-          <div className="flex gap-6 mt-6 w-full justify-center">
+          {/* Right (md+) / below (mobile): Stats */}
+          <div className="flex gap-6 mt-6 w-full justify-center md:mt-0 md:w-auto md:justify-end">
             <div className="text-center">
-              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Day Streak</div>
+              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Day Streak</div>
             </div>
-            <div className="w-px bg-white/20" />
+            <div className="w-px bg-border" />
             <div className="text-center">
-              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Chapters</div>
+              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Chapters</div>
             </div>
-            <div className="w-px bg-white/20" />
+            <div className="w-px bg-border" />
             <div className="text-center">
-              <div className="text-white mb-1 font-serif text-2xl font-bold">—</div>
-              <div className="text-white/70 font-sans text-xs uppercase tracking-wider">Bookmarks</div>
+              <div className="text-foreground mb-1 font-serif text-2xl font-bold">—</div>
+              <div className="text-muted-foreground font-sans text-xs uppercase tracking-wider">Bookmarks</div>
             </div>
           </div>
         </div>

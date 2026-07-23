@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Music2 } from 'lucide-react';
+import { apiFetch, getToken } from '../lib/api';
+import { subscribe as subscribeProfile, getProfileSnapshot, setProfile as setSharedProfile, type UserProfileSnapshot } from '../lib/userProfileStore';
 
 /* ── Icons ─────────────────────────────────────────────────── */
 
@@ -180,6 +182,21 @@ export function BottomNav() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [songPlaying, setSongPlaying] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const profile = useSyncExternalStore(subscribeProfile, getProfileSnapshot);
+
+  // Populates the sidebar/pill nav avatar as soon as the app loads with a
+  // valid session, rather than waiting for the user to first visit Profile
+  // or Personal Information (those screens also write to this same store,
+  // so a photo/name change there reflects here immediately without a
+  // remount — this nav persists across navigation, they don't).
+  useEffect(() => {
+    if (!getToken()) return;
+    apiFetch<{ success: boolean; data: UserProfileSnapshot }>('/api/v1/users/me')
+      .then(res => {
+        if (res.success && res.data) setSharedProfile(res.data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const matched = navItems.find(item =>
@@ -240,6 +257,8 @@ export function BottomNav() {
                         <AnimatedBibleIcon size={20} className="text-primary-foreground" strokeWidth={1.8} isActive />
                       ) : item.id === 'songs' ? (
                         <AnimatedMusicIcon size={20} className="text-primary-foreground" strokeWidth={1.8} isActive isPlaying={songPlaying} />
+                      ) : item.id === 'profile' && profile?.photo ? (
+                        <img src={profile.photo} alt="Profile" className="w-6 h-6 rounded-full object-cover" />
                       ) : (
                         <item.Icon size={20} className="text-primary-foreground" strokeWidth={1.8} />
                       )}
@@ -250,6 +269,8 @@ export function BottomNav() {
                         <AnimatedBibleIcon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} isActive={false} />
                       ) : item.id === 'songs' ? (
                         <AnimatedMusicIcon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} isActive={false} />
+                      ) : item.id === 'profile' && profile?.photo ? (
+                        <img src={profile.photo} alt="Profile" className="w-[22px] h-[22px] rounded-full object-cover" />
                       ) : (
                         <item.Icon size={22} className="text-[var(--muted-foreground)]" strokeWidth={1.6} />
                       )}
@@ -294,6 +315,8 @@ export function BottomNav() {
                     <AnimatedBibleIcon size={22} className="text-current" strokeWidth={isActive ? 1.8 : 1.6} isActive={isActive} />
                   ) : item.id === 'songs' ? (
                     <AnimatedMusicIcon size={22} className="text-current" strokeWidth={isActive ? 1.8 : 1.6} isActive={isActive} isPlaying={songPlaying} />
+                  ) : item.id === 'profile' && profile?.photo ? (
+                    <img src={profile.photo} alt="Profile" className="w-6 h-6 rounded-full object-cover" />
                   ) : (
                     <item.Icon size={22} className="text-current" strokeWidth={isActive ? 1.8 : 1.6} />
                   )}

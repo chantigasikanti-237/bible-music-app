@@ -202,6 +202,35 @@ export function Home() {
     return () => window.dispatchEvent(new CustomEvent('search-expanded', { detail: false }));
   }, [showSearch]);
 
+  // Verse of the Day — fetched from the currently selected Bible version
+  // (John 3 already exists in every version) instead of a hardcoded English
+  // string, so it reads in whatever language the user picked for the Bible.
+  // The chapter endpoint's own bookName field isn't localized (always
+  // "John"), so the book title comes from the books list instead, same as
+  // the localized titles shown in Bible Library / search.
+  const [verseOfDay, setVerseOfDay] = useState<{ bookName: string; text: string } | null>(null);
+  useEffect(() => {
+    const versionId = getBibleVersionId();
+    const lang = BIBLE_VERSIONS.find(v => v.id === versionId)?.lang || 'en';
+    Promise.all([
+      fetch(`/api/v1/bibles/${versionId}/books/JHN/chapters/3`).then(r => r.json()),
+      fetch(`/api/v1/bibles/${versionId}/books?lang=${lang}`).then(r => r.json()),
+    ])
+      .then(([chapterRes, booksRes]: [
+        { success: boolean; data: { bookName: string; verses: { number: number; text: string }[] } },
+        { success: boolean; data: { id: string; title: string }[] },
+      ]) => {
+        if (!chapterRes.success || !chapterRes.data) return;
+        const verse16 = chapterRes.data.verses.find(v => v.number === 16);
+        if (!verse16) return;
+        const jhnBook = booksRes.success && Array.isArray(booksRes.data)
+          ? booksRes.data.find(b => b.id === 'JHN')
+          : null;
+        setVerseOfDay({ bookName: jhnBook?.title || chapterRes.data.bookName, text: verse16.text });
+      })
+      .catch(() => {});
+  }, []);
+
   // "Hi {Full Name}" replaces the time-based greeting once we know who's
   // signed in — falls back to the greeting for guests / while this hasn't
   // resolved yet, rather than a blank header.
@@ -607,11 +636,11 @@ export function Home() {
               </div>
               <div>
                 <h3 className={`font-semibold font-sans text-sm ${textPrimary}`}>Verse of the Day</h3>
-                <p className={`font-sans text-xs ${textMuted}`}>John 3:16</p>
+                <p className={`font-sans text-xs ${textMuted}`}>{verseOfDay ? `${verseOfDay.bookName} 3:16` : 'John 3:16'}</p>
               </div>
             </div>
             <p className={`leading-relaxed font-serif text-lg italic mb-5 ${textPrimary}`}>
-              "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life."
+              "{verseOfDay?.text || 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.'}"
             </p>
             <motion.button
               whileHover={{ scale: 1.01 }}
