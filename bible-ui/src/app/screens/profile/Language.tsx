@@ -21,6 +21,7 @@ import {
   getMusicFollowsUniversal,
   setMusicFollowsUniversal,
 } from '../../lib/languagePreference';
+import { getBibleMiniPlayerEnabled, setBibleMiniPlayerEnabled } from '../../lib/playerStore';
 
 const defaultVersionIdFor = (code: LanguageCode): number =>
   BIBLE_VERSIONS.find(v => v.lang === code)?.id ?? BIBLE_VERSIONS[0].id;
@@ -64,6 +65,7 @@ export function Language() {
   const [hymnsCode, setHymnsCode] = useState<LanguageCode>(getHymnsLanguage);
   const [musicCode, setMusicCode] = useState<LanguageCode>(() => musicKeyToCode(getMusicLanguageKey()));
   const [musicFollowsUniversal, setMusicFollowsUniversalState] = useState(getMusicFollowsUniversal);
+  const [bibleMiniPlayer, setBibleMiniPlayerState] = useState(getBibleMiniPlayerEnabled);
 
   const bibleCode = (BIBLE_VERSIONS.find(v => v.id === bibleVersionId)?.lang as LanguageCode) || 'en';
 
@@ -106,6 +108,11 @@ export function Language() {
     setMusicCode(code);
   };
 
+  const handleToggleBibleMiniPlayer = (next: boolean) => {
+    setBibleMiniPlayerState(next);
+    setBibleMiniPlayerEnabled(next);
+  };
+
   const handleToggleMusicFollows = (next: boolean) => {
     setMusicFollowsUniversal(next);
     setMusicFollowsUniversalState(next);
@@ -133,6 +140,19 @@ export function Language() {
             </p>
           </div>
           <ToggleSwitch on={universal} onChange={handleToggle} />
+        </div>
+
+        {/* Mini Player for Bible */}
+        <div className="bg-card rounded-[24px] border border-border shadow-sm p-4 flex items-center gap-4">
+          <div className="flex-1">
+            <p className="text-foreground font-sans text-sm font-semibold mb-1">Mini Player for Bible</p>
+            <p className="text-muted-foreground font-sans text-xs">
+              {bibleMiniPlayer
+                ? 'Floating music player stays visible while reading the Bible.'
+                : 'Floating music player is hidden while reading the Bible.'}
+            </p>
+          </div>
+          <ToggleSwitch on={bibleMiniPlayer} onChange={handleToggleBibleMiniPlayer} />
         </div>
 
         {universal ? (

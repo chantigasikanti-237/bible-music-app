@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Search, Play, Pause, Heart, Download, TrendingUp, X, Music, Globe, Check, CloudDownload, ListMusic, Plus, Trash2, ChevronLeft, Clock, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MiniPlayer, type PlayerSong } from '../components/MiniPlayer';
-import { getSongAudioBlobUrlOffline, isSongDownloaded, removeSongOffline, listDownloadedSongs } from '../lib/offlineMusicStore';
+import { isSongDownloaded, removeSongOffline, listDownloadedSongs } from '../lib/offlineMusicStore';
 import { subscribe, getSnapshot, getActiveDownloads, startSongDownload, cancelSongDownload, getLastLimitMessage } from '../lib/musicDownloadManager';
 import { apiFetch } from '../lib/api';
 import { getMusicLanguageKey, setMusicLanguageKey, isUniversalLanguageEnabled, applyUniversalLanguage, musicKeyToCode, getMusicFollowsUniversal } from '../lib/languagePreference';
@@ -13,6 +12,11 @@ import {
   getPlaylists, createPlaylist, deletePlaylist, addSongToPlaylist, removeSongFromPlaylist, getPlaylist,
   type Playlist,
 } from '../lib/musicPlaylistStore';
+import {
+  subscribe as subscribePlayer, getSnapshot as getPlayerSnapshot,
+  startSong, isFav, toggleFav, clearAddToPlaylistRequest,
+  type Song,
+} from '../lib/playerStore';
 
 const LANGUAGES = [
   { key: 'English',   label: 'English',    sublabel: 'Worship & Praise',   flag: '🇬🇧' },
@@ -23,7 +27,9 @@ const LANGUAGES = [
   { key: 'Kannada',   label: 'ಕನ್ನಡ',       sublabel: 'Kannada Christian',   flag: '🇮🇳' },
 ];
 
-const FAVS_KEY = 'music_favorites_v2';
+// Read directly (not via playerStore) only as a fallback when nothing is
+// loaded into the store yet — e.g. a cold app start landing on Songs
+// straight from Home's "autoplay last played" shortcut.
 const LAST_PLAYED_KEY = 'music_last_played_v1';
 
 // Extra Trending shelves (Spotify-style horizontal rows), sourced from the
@@ -32,24 +38,6 @@ const SHELVES = [
   { key: 'hymns', title: 'Hymns Mix' },
   { key: 'longmix', title: 'Non-Stop Worship' },
 ] as const;
-
-interface Song {
-  videoId: string;
-  title: string;
-  artist: string;
-  image: string;
-  language: string;
-  isLongMix: boolean;
-}
-
-const getFavs = (): Song[] => {
-  try { return JSON.parse(localStorage.getItem(FAVS_KEY) || '[]'); } catch { return []; }
-};
-const saveFavs = (songs: Song[]) => localStorage.setItem(FAVS_KEY, JSON.stringify(songs));
-
-const toPlayerSong = (s: Song): PlayerSong => ({
-  videoId: s.videoId, title: s.title, artist: s.artist, image: s.image,
-});
 
 const mapApi = (raw: { id: string; title: string; thumbnail: string; channelTitle: string; isLongMix?: boolean }, lang: string): Song => ({
   videoId: raw.id,
@@ -62,7 +50,6 @@ const mapApi = (raw: { id: string; title: string; thumbnail: string; channelTitl
 
 export function Songs() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   /* ── Language / Tab / Search ─────────────────────────────── */
   const [lang, setLang] = useState<string>(getMusicLanguageKey);
@@ -72,7 +59,6 @@ export function Songs() {
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [shelves, setShelves] = useState<Record<string, Song[]>>({});
   const [shelvesLoading, setShelvesLoading] = useState<Record<string, boolean>>({});
-  const [favorites, setFavorites] = useState<Song[]>(getFavs);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Song[]>([]);
   const [searching, setSearching] = useState(false);
@@ -172,29 +158,11 @@ export function Songs() {
     setOpenPlaylist(getPlaylist(openPlaylist.id));
   };
 
-  /* ── Audio / Player state ────────────────────────────────── */
-  const [playerSong, setPlayerSong] = useState<Song | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [audioDuration, setAudioDuration] = useState(0);
-  const [playerExpanded, setPlayerExpanded] = useState(false);
-  const [queue, setQueue] = useState<Song[]>([]);
-  const [queueIndex, setQueueIndex] = useState(0);
-
-  // Tell BottomNav to hide when player goes full-screen
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('player-expanded', { detail: playerExpanded }));
-  }, [playerExpanded]);
-
-  // Tell BottomNav whether a song is actively playing (for soundwave animation)
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('player-playing', { detail: isPlaying }));
-  }, [isPlaying]);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Stable ref so onended always has the latest playNext without stale closure
-  const playNextRef = useRef<() => void>(() => {});
+  /* ── Audio / Player state ────────────────────────────────────
+   * Owned by playerStore.ts now, not local state — so it survives
+   * navigating away from this screen. This is just a read-only view onto
+   * it plus the handful of route-entry effects below. */
+  const playerSnap = useSyncExternalStore(subscribePlayer, getPlayerSnapshot);
 
   /* ── Load "Trending Now" shelf ────────────────────────────── */
   useEffect(() => {
@@ -258,152 +226,17 @@ export function Songs() {
     }, 400);
   }, [searchQuery, lang]);
 
-  /* ── Favorites ───────────────────────────────────────────── */
-  const isFav = useCallback((videoId: string) => favorites.some(f => f.videoId === videoId), [favorites]);
-  const toggleFav = useCallback((song: Song) => {
-    setFavorites(prev => {
-      const next = prev.some(f => f.videoId === song.videoId)
-        ? prev.filter(f => f.videoId !== song.videoId)
-        : [song, ...prev];
-      saveFavs(next);
-      return next;
-    });
-  }, []);
-  const toggleFavById = useCallback((videoId: string) => {
-    const song = trending.find(s => s.videoId === videoId)
-      || favorites.find(s => s.videoId === videoId)
-      || searchResults.find(s => s.videoId === videoId)
-      || playerSong as Song | undefined;
-    if (song) toggleFav(song);
-  }, [trending, favorites, searchResults, playerSong, toggleFav]);
-
-  /* ── Core audio helpers ──────────────────────────────────── */
-  const _loadAndPlay = useCallback(async (song: Song) => {
-    // Persist so Home screen can show the last played song
-    try { localStorage.setItem(LAST_PLAYED_KEY, JSON.stringify(song)); } catch {}
-    setLoadingId(song.videoId);
-    setCurrentTime(0);
-    setAudioDuration(0);
-    try {
-      const offlineUrl = await getSongAudioBlobUrlOffline(song.videoId);
-      // Online path plays through our own /stream proxy, not the raw
-      // extracted URL /api/audio/url returns - that URL is IP-locked to
-      // whichever server made the yt-dlp extraction request (ours, via a
-      // residential proxy), so a client fetching it directly - the phone,
-      // on its own IP - always gets rejected. /stream re-fetches and pipes
-      // the bytes server-side, keeping the same IP throughout, and needs no
-      // separate URL round-trip since it resolves the video ID itself.
-      const url = offlineUrl || `/api/audio/stream/${song.videoId}`;
-      audioRef.current?.pause();
-      const audio = new Audio(url);
-      audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
-      audio.ondurationchange = () => setAudioDuration(isFinite(audio.duration) ? audio.duration : 0);
-      audio.onended = () => { setIsPlaying(false); playNextRef.current(); };
-      audio.onerror = () => { setIsPlaying(false); setLoadingId(null); };
-      audioRef.current = audio;
-      await audio.play();
-      setIsPlaying(true);
-    } catch (err) {
-      // Was a bare catch with nothing surfaced anywhere - "stuck on play
-      // button" had no way to tell whether the URL fetch failed, the audio
-      // element failed to load, or .play() itself was rejected (e.g.
-      // Android WebView's autoplay-gesture policy).
-      console.error('[Songs] _loadAndPlay failed for', song.videoId, err);
-      setIsPlaying(false);
-    } finally {
-      setLoadingId(null);
-    }
-  }, []);
-
-  /* ── Public player actions ───────────────────────────────── */
-  const startSong = useCallback((song: Song, list: Song[] = []) => {
-    // Same song already loaded → just expand / resume
-    if (playerSong?.videoId === song.videoId) {
-      setPlayerExpanded(true);
-      if (audioRef.current && !isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(err => {
-          console.error('[Songs] resume play() failed for', song.videoId, err);
-        });
-      }
-      return;
-    }
-    setPlayerSong(song);
-    setPlayerExpanded(true);
-    const q = list.length > 0 ? list : [song];
-    setQueue(q);
-    const idx = q.findIndex(s => s.videoId === song.videoId);
-    setQueueIndex(idx >= 0 ? idx : 0);
-    _loadAndPlay(song);
-  }, [playerSong, isPlaying, _loadAndPlay]);
-
-  const togglePlay = useCallback(() => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(err => {
-        console.error('[Songs] togglePlay play() failed', err);
-      });
-    }
-  }, [isPlaying]);
-
-  const playNext = useCallback(() => {
-    if (queue.length < 2) return;
-    const nextIdx = (queueIndex + 1) % queue.length;
-    setQueueIndex(nextIdx);
-    const song = queue[nextIdx];
-    setPlayerSong(song);
-    _loadAndPlay(song);
-  }, [queue, queueIndex, _loadAndPlay]);
-
-  const playPrev = useCallback(() => {
-    if (queue.length === 0) return;
-    // Within first 3s → go to prev; otherwise restart
-    if (audioRef.current && audioRef.current.currentTime > 3) {
-      audioRef.current.currentTime = 0;
-      return;
-    }
-    const prevIdx = (queueIndex - 1 + queue.length) % queue.length;
-    setQueueIndex(prevIdx);
-    const song = queue[prevIdx];
-    setPlayerSong(song);
-    _loadAndPlay(song);
-  }, [queue, queueIndex, _loadAndPlay]);
-
-  const seekTo = useCallback((frac: number) => {
-    if (!audioRef.current || !audioDuration) return;
-    audioRef.current.currentTime = frac * audioDuration;
-    setCurrentTime(frac * audioDuration);
-  }, [audioDuration]);
-
-  const stopPlayer = useCallback(() => {
-    audioRef.current?.pause();
-    audioRef.current = null;
-    setPlayerSong(null);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setAudioDuration(0);
-    setPlayerExpanded(false);
-    setQueue([]);
-    setQueueIndex(0);
-  }, []);
-
-  // Keep ref current so onended callback is never stale
-  useEffect(() => { playNextRef.current = playNext; }, [playNext]);
-
   // Jump straight into a specific song when navigated here from Home's
   // global search (a downloaded song or a music favorite result).
   useEffect(() => {
     const state = location.state as { openSong?: Song } | null;
     if (!state?.openSong?.videoId) return;
-    setPlayerSong(state.openSong);
-    setPlayerExpanded(true);
-    _loadAndPlay(state.openSong);
+    startSong(state.openSong);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-play last song when navigated here from Home's mini-player
+  // Auto-play last song when navigated here from Home's "Continue Listening"
+  // card and nothing is loaded into the store yet (cold start).
   useEffect(() => {
     const state = location.state as { autoplay?: boolean } | null;
     if (!state?.autoplay) return;
@@ -411,20 +244,26 @@ export function Songs() {
       const raw = localStorage.getItem(LAST_PLAYED_KEY);
       if (!raw) return;
       const song = JSON.parse(raw) as Song;
-      if (song?.videoId) {
-        setPlayerSong(song);
-        setPlayerExpanded(true);
-        _loadAndPlay(song);
-      }
+      if (song?.videoId) startSong(song);
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The full-screen player's "add to playlist" is reachable from any route,
+  // but the picker sheet below only lives on this screen — pick up the
+  // request once we're mounted and open it here.
+  useEffect(() => {
+    if (playerSnap.addToPlaylistRequest) {
+      setAddToPlaylistSong(playerSnap.addToPlaylistRequest);
+      clearAddToPlaylistRequest();
+    }
+  }, [playerSnap.addToPlaylistRequest]);
+
   const isSearching = searchQuery.trim().length > 0;
   const related = searchResults.slice(0, 5);
-  const isCardActive = (videoId: string) => playerSong?.videoId === videoId;
-  const isCardPlaying = (videoId: string) => isPlaying && playerSong?.videoId === videoId;
-  const isCardLoading = (videoId: string) => loadingId === videoId;
+  const isCardActive = (videoId: string) => playerSnap.song?.videoId === videoId;
+  const isCardPlaying = (videoId: string) => playerSnap.isPlaying && playerSnap.song?.videoId === videoId;
+  const isCardLoading = (videoId: string) => playerSnap.loadingId === videoId;
 
   // Spotify-style horizontal shelf: a title row, then a horizontally
   // scrolling strip of cards instead of a fixed grid.
@@ -649,9 +488,9 @@ export function Songs() {
                   <span className={`relative z-10 flex items-center gap-1.5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                     {tab === 'trending' ? <TrendingUp size={14} /> : <Download size={14} />}
                     {tab === 'trending' ? 'Trending' : 'Assets'}
-                    {tab === 'assets' && favorites.length > 0 && (
+                    {tab === 'assets' && playerSnap.favorites.length > 0 && (
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/20 text-primary'}`}>
-                        {favorites.length}
+                        {playerSnap.favorites.length}
                       </span>
                     )}
                   </span>
@@ -742,7 +581,7 @@ export function Songs() {
                     </div>
 
                     {assetsView === 'favorites' && (
-                      favorites.length === 0 ? (
+                      playerSnap.favorites.length === 0 ? (
                         <div className="flex flex-col items-center gap-3 py-16">
                           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                             <Heart size={28} className="text-muted-foreground" />
@@ -756,7 +595,7 @@ export function Songs() {
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {favorites.map((song, i) => (
+                          {playerSnap.favorites.map((song, i) => (
                             <motion.div key={song.videoId} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}>
                               <SongCard
                                 song={song}
@@ -764,7 +603,7 @@ export function Songs() {
                                 isLoading={isCardLoading(song.videoId)}
                                 isActive={isCardActive(song.videoId)}
                                 isFav={true}
-                                onPlay={() => startSong(song, favorites)}
+                                onPlay={() => startSong(song, playerSnap.favorites)}
                                 onFav={() => toggleFav(song)}
                                 showLang
                                 showDownload
@@ -1011,46 +850,6 @@ export function Songs() {
         )}
       </AnimatePresence>
 
-      {/* Music Player */}
-      <AnimatePresence>
-        {playerSong && (
-          <MiniPlayer
-            song={toPlayerSong(playerSong)}
-            isPlaying={isPlaying}
-            isLoading={loadingId === playerSong.videoId}
-            currentTime={currentTime}
-            duration={audioDuration}
-            expanded={playerExpanded}
-            isFav={isFav(playerSong.videoId)}
-            queue={queue.map(toPlayerSong)}
-            queueIndex={queueIndex}
-            onToggleExpand={() => setPlayerExpanded(e => !e)}
-            onTogglePlay={togglePlay}
-            onClose={stopPlayer}
-            onNext={queue.length > 1 ? playNext : undefined}
-            onPrev={queue.length > 1 ? playPrev : undefined}
-            onSeek={seekTo}
-            onToggleFav={() => toggleFavById(playerSong.videoId)}
-            onAddToPlaylist={() => setAddToPlaylistSong(playerSong)}
-            onDownload={async () => {
-              // Was firing a raw browser file download straight from the
-              // stream endpoint — bypassed auth, quota, IndexedDB storage,
-              // and the chunked-download retry logic, so it never showed up
-              // in Assets ▸ Downloads and wasn't resilient to Cloudflare's
-              // proxy timeout on a real deploy. Route through the same
-              // manager every other download button in the app uses.
-              const outcome = await startSongDownload(playerSong);
-              if (outcome === 'not_authenticated') {
-                if (window.confirm('Sign in to download songs for offline listening. Go to the sign-in screen now?')) {
-                  navigate('/login');
-                }
-              } else if (outcome === 'limit_reached') {
-                window.alert(getLastLimitMessage());
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Music2 } from 'lucide-react';
 import { apiFetch, getToken } from '../lib/api';
 import { subscribe as subscribeProfile, getProfileSnapshot, setProfile as setSharedProfile, type UserProfileSnapshot } from '../lib/userProfileStore';
+import { subscribe as subscribePlayer, getSnapshot as getPlayerSnapshot } from '../lib/playerStore';
 
 /* ── Icons ─────────────────────────────────────────────────── */
 
@@ -179,10 +180,11 @@ export function BottomNav() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const [activeTab, setActiveTab] = useState('home');
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [songPlaying, setSongPlaying] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const profile = useSyncExternalStore(subscribeProfile, getProfileSnapshot);
+  const playerSnap = useSyncExternalStore(subscribePlayer, getPlayerSnapshot);
+  const playerOpen = playerSnap.expanded;
+  const songPlaying = playerSnap.isPlaying;
 
   // Populates the sidebar/pill nav avatar as soon as the app loads with a
   // valid session, rather than waiting for the user to first visit Profile
@@ -204,18 +206,6 @@ export function BottomNav() {
     );
     if (matched) setActiveTab(matched.id);
   }, [location.pathname]);
-
-  useEffect(() => {
-    const handler = (e: Event) => setPlayerOpen((e as CustomEvent<boolean>).detail);
-    window.addEventListener('player-expanded', handler);
-    return () => window.removeEventListener('player-expanded', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => setSongPlaying((e as CustomEvent<boolean>).detail);
-    window.addEventListener('player-playing', handler);
-    return () => window.removeEventListener('player-playing', handler);
-  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => setSearchExpanded((e as CustomEvent<boolean>).detail);

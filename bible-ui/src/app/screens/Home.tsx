@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router';
-import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, ChevronRight, Star, Search, X, Music2 } from 'lucide-react';
+import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, Pause, ChevronRight, Star, Search, X, Music2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getBibleVersionId, getToken, apiFetch } from '../lib/api';
 import { BIBLE_VERSIONS } from './BibleLibrary';
@@ -8,6 +8,7 @@ import { parseReference } from '../lib/bibleReference';
 import { listDownloadedSongs } from '../lib/offlineMusicStore';
 import { getHymnsLanguage } from '../lib/languagePreference';
 import { listBookmarksOffline } from '../lib/offlineBookmarks';
+import { subscribe as subscribePlayer, getSnapshot as getPlayerSnapshot, togglePlay as togglePlayerPlay, setExpanded as setPlayerExpanded } from '../lib/playerStore';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
@@ -173,7 +174,8 @@ interface VerseBookmark {
 export function Home() {
   const navigate = useNavigate();
   const [quoteIdx, setQuoteIdx] = useState(0);
-  const [songPlaying, setSongPlaying] = useState(false);
+  const playerSnap = useSyncExternalStore(subscribePlayer, getPlayerSnapshot);
+  const songPlaying = playerSnap.isPlaying;
   const [recentChapters, setRecentChapters] = useState<RecentChapter[]>([]);
   const [scrollY, setScrollY] = useState(0);
   const [userName, setUserName] = useState<string | null>(null);
@@ -384,9 +386,12 @@ export function Home() {
     musicFavoriteResults.length || hymnFavoriteResults.length || bookmarkResults.length
   );
 
-  const lastSong = useMemo(() => {
+  // Prefer whatever's live in the player store; fall back to the last
+  // session's song from storage for a cold start before anything's played.
+  const storedLastSong = useMemo(() => {
     try { return JSON.parse(localStorage.getItem(LAST_PLAYED_KEY) || 'null'); } catch { return null; }
   }, []);
+  const lastSong = playerSnap.song ?? storedLastSong;
 
   const tc = useMemo(getTimeConfig, []);
 
@@ -403,13 +408,6 @@ export function Home() {
   useEffect(() => {
     const t = setInterval(() => setQuoteIdx(i => (i + 1) % QUOTES.length), 5000);
     return () => clearInterval(t);
-  }, []);
-
-  // Player playing state
-  useEffect(() => {
-    const h = (e: Event) => setSongPlaying((e as CustomEvent<boolean>).detail);
-    window.addEventListener('player-playing', h);
-    return () => window.removeEventListener('player-playing', h);
   }, []);
 
   // Parallax via parent scroll container
@@ -659,7 +657,7 @@ export function Home() {
           style={{ background: 'linear-gradient(135deg, #163A2D 0%, #1e4d38 50%, #215442 100%)' }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => navigate('/songs')}
+          onClick={() => playerSnap.song ? setPlayerExpanded(true) : navigate('/songs')}
         >
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: 'radial-gradient(ellipse at 85% 40%, rgba(110,231,183,0.25) 0%, transparent 55%)' }} />
@@ -682,10 +680,17 @@ export function Home() {
           <div className="flex items-center gap-2.5 flex-shrink-0 relative z-10">
             {songPlaying && <SoundwaveMini playing />}
             <div
-              onClick={e => { e.stopPropagation(); navigate('/songs', { state: { autoplay: true } }); }}
+              onClick={e => {
+                e.stopPropagation();
+                if (playerSnap.song) togglePlayerPlay();
+                else navigate('/songs', { state: { autoplay: true } });
+              }}
               className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
             >
-              <Play size={17} className="text-white ml-0.5" fill="white" />
+              {songPlaying
+                ? <Pause size={17} className="text-white" fill="white" />
+                : <Play size={17} className="text-white ml-0.5" fill="white" />
+              }
             </div>
           </div>
         </motion.div>

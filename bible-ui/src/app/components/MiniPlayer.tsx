@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, SkipForward, SkipBack, X, Heart, ChevronDown, Music, Download, Shuffle, Repeat, ListPlus } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence, useDragControls } from 'motion/react';
+import { Play, Pause, SkipForward, SkipBack, X, Heart, ChevronDown, Music, Download, Shuffle, Repeat, ListPlus, ListMusic } from 'lucide-react';
 
 export interface PlayerSong {
   videoId: string;
@@ -48,6 +48,14 @@ export function MiniPlayer({
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [queueExpanded, setQueueExpanded] = useState(false);
+  const queueDragControls = useDragControls();
+
+  // Collapse the queue sheet whenever the full player itself closes, so it
+  // doesn't reopen straight into the queue next time.
+  useEffect(() => {
+    if (!expanded) setQueueExpanded(false);
+  }, [expanded]);
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!onSeek || !progressBarRef.current) return;
@@ -252,57 +260,120 @@ export function MiniPlayer({
               </div>
             </div>
 
-            {/* ── Up Next queue ── */}
+            {/* ── Queue pull-up handle (Spotify-style) ── */}
             {queue.length > 1 && (
-              <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-white/30 text-[10px] font-bold tracking-[0.22em] uppercase">Up Next</span>
-                  <div className="flex-1 h-px bg-white/10" />
+              <motion.div
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.5}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y < -30 || info.velocity.y < -400) setQueueExpanded(true);
+                }}
+                onClick={() => setQueueExpanded(true)}
+                className="flex-shrink-0 flex flex-col items-center gap-1.5 pb-5 pt-1 cursor-pointer select-none touch-none"
+              >
+                <div className="w-8 h-1 rounded-full bg-white/20" />
+                <div className="flex items-center gap-1.5 text-white/40">
+                  <ListMusic size={14} />
+                  <span className="text-[10px] font-bold tracking-[0.18em] uppercase">Queue</span>
                 </div>
-                <div className="space-y-1">
-                  {queue.map((item, i) => {
-                    const isCurrent = i === queueIndex;
-                    return (
-                      <div
-                        key={item.videoId + i}
-                        className={`flex items-center gap-3 p-2.5 rounded-[14px] transition-colors ${isCurrent ? 'bg-white/10' : 'hover:bg-white/5'}`}
-                      >
-                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 relative">
-                          {item.image
-                            ? <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                            : <div className="w-full h-full flex items-center justify-center"><Music size={14} className="text-white/20" /></div>
-                          }
-                          {isCurrent && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              {isPlaying
-                                ? <div className="flex items-end gap-[2px] h-4">
-                                    {[0.5, 1, 0.7, 0.9].map((h, k) => (
-                                      <motion.div key={k} className="w-[2px] rounded-full bg-[#6EE7B7]"
-                                        animate={{ height: [`${h * 16}px`, '4px', `${h * 16}px`] }}
-                                        transition={{ duration: 0.6 + k * 0.1, repeat: Infinity, ease: 'easeInOut', delay: k * 0.12 }} />
-                                    ))}
-                                  </div>
-                                : <div className="w-3 h-3 rounded-full border border-[#6EE7B7] flex items-center justify-center">
-                                    <Play size={6} className="text-[#6EE7B7] ml-px" fill="#6EE7B7" />
-                                  </div>
-                              }
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-[12px] font-semibold truncate leading-tight ${isCurrent ? 'text-white' : 'text-white/50'}`}>{item.title}</p>
-                          <p className="text-white/25 text-[10px] truncate mt-0.5">{item.artist}</p>
-                        </div>
-                        {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-[#6EE7B7] flex-shrink-0" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              </motion.div>
             )}
 
           </div>
+
+          {/* ── Full-screen Queue sheet: pulled up over the Now Playing view ── */}
+          <AnimatePresence>
+            {queueExpanded && (
+              <motion.div
+                key="queue-sheet"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 300 }}
+                drag="y"
+                dragListener={false}
+                dragControls={queueDragControls}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.5 }}
+                onDragEnd={(_, info) => {
+                  if (info.offset.y > 60 || info.velocity.y > 400) setQueueExpanded(false);
+                }}
+                className="absolute inset-0 z-20 flex flex-col"
+                style={{ background: '#0a0a0a' }}
+              >
+                {/* Only this grip handle starts the drag — the header buttons
+                    and queue list below stay normally interactive/scrollable. */}
+                <div
+                  onPointerDown={e => queueDragControls.start(e)}
+                  className="flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
+                >
+                  <div className="w-10 h-1 rounded-full bg-white/25" />
+                </div>
+
+                <div className="flex items-center justify-between px-5 pt-2 pb-4 flex-shrink-0">
+                  <motion.button whileTap={{ scale: 0.88 }} onClick={() => setQueueExpanded(false)}
+                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <ChevronDown size={20} className="text-white" />
+                  </motion.button>
+                  <p className="text-white text-[15px] font-bold">Queue</p>
+                  <div className="w-10 h-10" />
+                </div>
+
+                <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-6">
+                  {/* Now Playing */}
+                  <p className="text-white/40 text-[11px] font-bold tracking-[0.14em] uppercase mb-2 px-1">Now Playing</p>
+                  <div className="flex items-center gap-3 p-2.5 rounded-[12px] bg-white/5 mb-6">
+                    <div className="w-11 h-11 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                      {song.image
+                        ? <img src={song.image} alt={song.title} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center"><Music size={16} className="text-white/20" /></div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#6EE7B7] text-[13px] font-semibold truncate leading-tight">{song.title}</p>
+                      <p className="text-white/40 text-[11px] truncate mt-0.5">{song.artist}</p>
+                    </div>
+                    {isPlaying && (
+                      <div className="flex items-end gap-[2px] h-3.5 flex-shrink-0">
+                        {[0.5, 1, 0.7, 0.9].map((h, k) => (
+                          <motion.div key={k} className="w-[2px] rounded-full bg-[#6EE7B7]"
+                            animate={{ height: [`${h * 14}px`, '3px', `${h * 14}px`] }}
+                            transition={{ duration: 0.6 + k * 0.1, repeat: Infinity, ease: 'easeInOut', delay: k * 0.12 }} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Next Up */}
+                  {queue.slice(queueIndex + 1).length > 0 && (
+                    <>
+                      <p className="text-white/40 text-[11px] font-bold tracking-[0.14em] uppercase mb-2 px-1">Next Up</p>
+                      <div className="space-y-0.5">
+                        {queue.slice(queueIndex + 1).map((item, i) => (
+                          <div
+                            key={item.videoId + i}
+                            className="flex items-center gap-3 p-2.5 rounded-[12px] hover:bg-white/5 transition-colors"
+                          >
+                            <div className="w-11 h-11 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                              {item.image
+                                ? <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                                : <div className="w-full h-full flex items-center justify-center"><Music size={16} className="text-white/20" /></div>
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-[13px] font-semibold truncate leading-tight">{item.title}</p>
+                              <p className="text-white/40 text-[11px] truncate mt-0.5">{item.artist}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
       ) : (
