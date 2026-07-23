@@ -233,7 +233,7 @@ export function Home() {
       .catch(() => {});
   }, []);
 
-  // "Hi {Full Name}" replaces the time-based greeting once we know who's
+  // The user's name replaces the time-based greeting once we know who's
   // signed in — falls back to the greeting for guests / while this hasn't
   // resolved yet, rather than a blank header.
   useEffect(() => {
@@ -589,7 +589,7 @@ export function Home() {
           ) : (
             <div>
               <h1 className={`text-3xl font-bold font-serif ${textPrimary} leading-tight`}>
-                {userName ? `Hi ${userName}` : tc.greeting}
+                {userName || tc.greeting}
               </h1>
               <p className={`text-sm mt-1 ${textMuted}`}>{tc.subtitle}</p>
             </div>
