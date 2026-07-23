@@ -24,6 +24,7 @@ const {
   listBooks,
   listChapters,
   getChapter,
+  streamAudio,
 } = require("../controllers/bibleContentController");
 const {
   createBookmark,
@@ -81,6 +82,10 @@ router.get("/bibles/:versionId/books/:bookId/chapters", listChapters);
 router.get(
   "/bibles/:versionId/books/:bookId/chapters/:chapterNumber",
   getChapter
+);
+router.get(
+  "/bibles/:versionId/books/:bookId/chapters/:chapterNumber/audio",
+  streamAudio
 );
 router.get("/songs", listSongs);
 router.get("/search/verses", searchVerses);

@@ -58,4 +58,46 @@ const resolveBibleBrainAudioUrl = async ({ versionId, bookId, chapterNumber }) =
   }
 };
 
-module.exports = { resolveBibleBrainAudioUrl };
+// Bible Brain serves its mp3s as "Content-Type: binary/octet-stream" rather
+// than "audio/mpeg" (confirmed directly against their CDN), and from a
+// third-party origin. Desktop Chrome tolerates that via content-sniffing,
+// but the app's real target - an Android WebView - is typically much
+// stricter about a mismatched Content-Type, so playback can silently fail
+// there even though the file itself is a perfectly valid mp3. Proxying
+// through our own server (same pattern already used for YouTube audio in
+// audioService.js) serves it same-origin with the correct header instead of
+// handing the client a cross-origin URL with a wrong one.
+const streamChapterAudio = async ({ versionId, bookId, chapterNumber }, req, res) => {
+  const resolved = await resolveBibleBrainAudioUrl({ versionId, bookId, chapterNumber });
+  if (!resolved) {
+    res.status(404).json({ success: false, message: "Audio not available for this chapter" });
+    return;
+  }
+
+  try {
+    const upstream = await axios.get(resolved.url, {
+      responseType: "stream",
+      headers: req.headers.range ? { Range: req.headers.range } : {},
+      validateStatus: () => true,
+    });
+
+    res.status(upstream.status);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Accept-Ranges", "bytes");
+    if (upstream.headers["content-length"]) {
+      res.setHeader("Content-Length", upstream.headers["content-length"]);
+    }
+    if (upstream.headers["content-range"]) {
+      res.setHeader("Content-Range", upstream.headers["content-range"]);
+    }
+    upstream.data.pipe(res);
+    upstream.data.on("error", () => {
+      if (!res.headersSent) res.status(502).end();
+      else res.destroy();
+    });
+  } catch (_) {
+    if (!res.headersSent) res.status(502).json({ success: false, message: "Failed to stream audio" });
+  }
+};
+
+module.exports = { resolveBibleBrainAudioUrl, streamChapterAudio };

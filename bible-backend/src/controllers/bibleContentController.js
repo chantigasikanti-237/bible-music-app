@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { bibleContentService } = require("../services/bibleContentService");
+const { streamChapterAudio } = require("../integrations/bibleBrainAudio");
 
 const parseVersionId = (value) => {
   const versionId = Number(value);
@@ -55,8 +56,21 @@ const getChapter = asyncHandler(async (req, res) => {
   });
 });
 
+const streamAudio = asyncHandler(async (req, res) => {
+  await streamChapterAudio(
+    {
+      versionId: parseVersionId(req.params.versionId),
+      bookId: req.params.bookId,
+      chapterNumber: parseChapterNumber(req.params.chapterNumber),
+    },
+    req,
+    res
+  );
+});
+
 module.exports = {
   listBooks,
   listChapters,
   getChapter,
+  streamAudio,
 };

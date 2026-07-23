@@ -46,9 +46,12 @@ const mapChapterResponse = (chapter) => ({
 const applyBibleBrainAudio = async (normalizedChapter, cacheKey) => {
   const resolved = await resolveBibleBrainAudioUrl(cacheKey);
   if (resolved) {
+    // Point the client at our own same-origin proxy route rather than Bible
+    // Brain's CloudFront URL directly - see streamChapterAudio for why
+    // (wrong Content-Type on their end, stricter WebView playback).
     normalizedChapter.audio = {
       provider: resolved.provider,
-      url: resolved.url,
+      url: `/api/v1/bibles/${cacheKey.versionId}/books/${cacheKey.bookId}/chapters/${cacheKey.chapterNumber}/audio`,
       storageKey: null,
     };
   }
