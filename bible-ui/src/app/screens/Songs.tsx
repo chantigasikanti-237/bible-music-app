@@ -27,11 +27,6 @@ const LANGUAGES = [
   { key: 'Kannada',   label: 'ಕನ್ನಡ',       sublabel: 'Kannada Christian',   flag: '🇮🇳' },
 ];
 
-// Read directly (not via playerStore) only as a fallback when nothing is
-// loaded into the store yet — e.g. a cold app start landing on Songs
-// straight from Home's "autoplay last played" shortcut.
-const LAST_PLAYED_KEY = 'music_last_played_v1';
-
 // Extra Trending shelves (Spotify-style horizontal rows), sourced from the
 // backend's category endpoint. Keys must match audioService.js's CATEGORIES map.
 const SHELVES = [
@@ -232,20 +227,6 @@ export function Songs() {
     const state = location.state as { openSong?: Song } | null;
     if (!state?.openSong?.videoId) return;
     startSong(state.openSong);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Auto-play last song when navigated here from Home's "Continue Listening"
-  // card and nothing is loaded into the store yet (cold start).
-  useEffect(() => {
-    const state = location.state as { autoplay?: boolean } | null;
-    if (!state?.autoplay) return;
-    try {
-      const raw = localStorage.getItem(LAST_PLAYED_KEY);
-      if (!raw) return;
-      const song = JSON.parse(raw) as Song;
-      if (song?.videoId) startSong(song);
-    } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

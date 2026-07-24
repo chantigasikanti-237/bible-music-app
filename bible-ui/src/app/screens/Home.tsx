@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router';
-import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, Pause, ChevronRight, Star, Search, X, Music2 } from 'lucide-react';
+import { BookOpen, Headphones, Bookmark, Clock, Flame, BookMarked, Play, Pause, SkipBack, SkipForward, ChevronRight, Star, Search, X, Music2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getBibleVersionId, getToken, apiFetch } from '../lib/api';
 import { BIBLE_VERSIONS } from './BibleLibrary';
@@ -8,7 +8,8 @@ import { parseReference } from '../lib/bibleReference';
 import { listDownloadedSongs } from '../lib/offlineMusicStore';
 import { getHymnsLanguage } from '../lib/languagePreference';
 import { listBookmarksOffline } from '../lib/offlineBookmarks';
-import { subscribe as subscribePlayer, getSnapshot as getPlayerSnapshot, togglePlay as togglePlayerPlay, setExpanded as setPlayerExpanded } from '../lib/playerStore';
+import { subscribe as subscribePlayer, getSnapshot as getPlayerSnapshot, togglePlay as togglePlayerPlay, setExpanded as setPlayerExpanded, playNext as playNextSong, playPrev as playPrevSong, startSong as startPlayerSong } from '../lib/playerStore';
+import { getScriptFontFamily } from '../lib/scriptFonts';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
@@ -210,7 +211,7 @@ export function Home() {
   // The chapter endpoint's own bookName field isn't localized (always
   // "John"), so the book title comes from the books list instead, same as
   // the localized titles shown in Bible Library / search.
-  const [verseOfDay, setVerseOfDay] = useState<{ bookName: string; text: string } | null>(null);
+  const [verseOfDay, setVerseOfDay] = useState<{ bookName: string; text: string; lang: string } | null>(null);
   useEffect(() => {
     const versionId = getBibleVersionId();
     const lang = BIBLE_VERSIONS.find(v => v.id === versionId)?.lang || 'en';
@@ -228,7 +229,7 @@ export function Home() {
         const jhnBook = booksRes.success && Array.isArray(booksRes.data)
           ? booksRes.data.find(b => b.id === 'JHN')
           : null;
-        setVerseOfDay({ bookName: jhnBook?.title || chapterRes.data.bookName, text: verse16.text });
+        setVerseOfDay({ bookName: jhnBook?.title || chapterRes.data.bookName, text: verse16.text, lang });
       })
       .catch(() => {});
   }, []);
@@ -637,7 +638,10 @@ export function Home() {
                 <p className={`font-sans text-xs ${textMuted}`}>{verseOfDay ? `${verseOfDay.bookName} 3:16` : 'John 3:16'}</p>
               </div>
             </div>
-            <p className={`leading-relaxed font-serif text-lg italic mb-5 ${textPrimary}`}>
+            <p
+              className={`leading-relaxed font-serif text-lg italic mb-5 ${textPrimary}`}
+              style={{ fontFamily: getScriptFontFamily(verseOfDay?.lang || 'en') }}
+            >
               "{verseOfDay?.text || 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.'}"
             </p>
             <motion.button
@@ -657,7 +661,11 @@ export function Home() {
           style={{ background: 'linear-gradient(135deg, #163A2D 0%, #1e4d38 50%, #215442 100%)' }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => playerSnap.song ? setPlayerExpanded(true) : navigate('/songs')}
+          onClick={() => {
+            if (playerSnap.song) setPlayerExpanded(true);
+            else if (storedLastSong) startPlayerSong(storedLastSong);
+            else navigate('/songs');
+          }}
         >
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: 'radial-gradient(ellipse at 85% 40%, rgba(110,231,183,0.25) 0%, transparent 55%)' }} />
@@ -675,24 +683,68 @@ export function Home() {
             </p>
             <p className="text-white font-semibold text-sm truncate">{lastSong?.title ?? 'Tap to browse music'}</p>
             <p className="text-white/55 text-xs truncate mt-0.5">{lastSong?.artist ?? 'Worship Music'}</p>
+
+            {/* Playing: progress bar sits right above the control row, then
+                prev/play/next with real spacing between them — not bunched. */}
+            {songPlaying && (
+              <>
+                {playerSnap.duration > 0 && (
+                  <div className="h-[3px] bg-white/15 rounded-full overflow-hidden mt-2.5 mb-2.5">
+                    <div
+                      className="h-full bg-white/70 rounded-full"
+                      style={{ width: `${Math.min(1, playerSnap.currentTime / playerSnap.duration) * 100}%` }}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-5">
+                  <button
+                    onClick={e => { e.stopPropagation(); if (playerSnap.queue.length > 1) playPrevSong(); }}
+                    disabled={playerSnap.queue.length <= 1}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-30"
+                  >
+                    <SkipBack size={13} className="text-white" fill="white" />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); togglePlayerPlay(); }}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                  >
+                    <Pause size={13} className="text-white" fill="white" />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); if (playerSnap.queue.length > 1) playNextSong(); }}
+                    disabled={playerSnap.queue.length <= 1}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors disabled:opacity-30"
+                  >
+                    <SkipForward size={13} className="text-white" fill="white" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center gap-2.5 flex-shrink-0 relative z-10">
-            {songPlaying && <SoundwaveMini playing />}
+          {/* Top-right slot: while playing this is a plain animation, no
+              background, no click handler — play/pause/skip only happen via
+              their own buttons below. Taps here fall through to the card's
+              own onClick, which opens the full player, same as tapping
+              anywhere else on the card. While paused it's the real Play
+              button, since there's no other control visible to start it. */}
+          {songPlaying ? (
+            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 relative z-10 pointer-events-none">
+              <SoundwaveMini playing />
+            </div>
+          ) : (
             <div
               onClick={e => {
                 e.stopPropagation();
                 if (playerSnap.song) togglePlayerPlay();
-                else navigate('/songs', { state: { autoplay: true } });
+                else if (storedLastSong) startPlayerSong(storedLastSong);
+                else navigate('/songs');
               }}
-              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0 relative z-10"
             >
-              {songPlaying
-                ? <Pause size={17} className="text-white" fill="white" />
-                : <Play size={17} className="text-white ml-0.5" fill="white" />
-              }
+              <Play size={17} className="text-white ml-0.5" fill="white" />
             </div>
-          </div>
+          )}
         </motion.div>
 
         {/* ── Daily Plan card ── */}
